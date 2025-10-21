@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>Dashboard</h2>
+    <ul class="nav-links">
+      <li><a href="calendar.html">My Calendar</a></li>
+      <li><a href="my-organizations.html">My Organizations</a></li>
+      <li><a href="all-organizations.html">All Organizations</a></li>
+      <li><a href="send-notice.html">Send Notice</a></li>
+      <li><a href="manage-users.html">Manage Users</a></li>
+      <li><a href="settings.html">Settings</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h1>Welcome, Jack</h1>
+      <div class="notifications">
+        <button id="notifBtn">🔔</button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <h3>Notifications</h3>
+          <div class="notif-item">📢 New event added to calendar</div>
+          <div class="notif-item">👥 Organization approved</div>
+          <div class="notif-item">⚙ Settings updated</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="content">
+      <h2>Dashboard Overview</h2>
+      <p>Quick summary of your activities, organizations, and notifications.</p>
+    </section>
+  </main>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

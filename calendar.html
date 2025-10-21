@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Interactive Calendar</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap" role="application" aria-label="Interactive calendar">
+    <header>
+      <h1>Calendar</h1>
+      <div class="controls">
+        <button class="btn" id="prev" aria-label="Previous month">◀</button>
+        <div class="month-display" id="monthDisplay">Month Year</div>
+        <button class="btn" id="next" aria-label="Next month">▶</button>
+        <button class="btn" id="todayBtn">Today</button>
+      </div>
+    </header>
+
+    <section class="calendar">
+      <div class="weekdays" id="weekdays"></div>
+      <div class="days" id="days" tabindex="0"></div>
+    </section>
+
+    <div class="legend">
+      <span class="small">Click a day to add an event (stored locally).</span>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2 id="modalDate"></h2>
+      <input type="text" id="eventInput" placeholder="Event name..." />
+
+      <div class="time-row">
+        <select id="hour"></select>
+        <span>:</span>
+        <select id="minute"></select>
+        <select id="ampm">
+          <option>AM</option>
+          <option>PM</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="cancel" id="cancelBtn">Cancel</button>
+        <button class="delete" id="deleteBtn" style="display:none; background:#999; color:#fff;">Delete</button>
+        <button class="save" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
