@@ -24,12 +24,17 @@
     <header class="topbar">
       <h1>Welcome, Jack</h1>
       <div class="notifications">
-        <button id="notifBtn">🔔</button>
+        <button id="notifBtn" class="notif-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 24c1.104 0 2-.897 2-2h-4c0 1.103.896 2 2 2zm6-6v-5c0-3.072-1.637-5.64-4.5-6.32V6c0-.828-.671-1.5-1.5-1.5S10.5 5.172 10.5 6v.68C7.636 7.36 6 9.928 6 13v5l-2 2v1h16v-1l-2-2z"/>
+          </svg>
+        </button>
+
         <div class="notif-dropdown" id="notifDropdown">
           <h3>Notifications</h3>
-          <div class="notif-item">📢 New event added to calendar</div>
-          <div class="notif-item">👥 Organization approved</div>
-          <div class="notif-item">⚙ Settings updated</div>
+          <div class="notif-item">New event added to calendar</div>
+          <div class="notif-item">Organization approved</div>
+          <div class="notif-item">Settings updated</div>
         </div>
       </div>
     </header>
