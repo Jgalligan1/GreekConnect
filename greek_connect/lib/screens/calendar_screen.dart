@@ -6,16 +6,17 @@ import '../models/event.dart';
 import '../services/event_storage.dart';
 
 class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+  const CalendarScreen({Key? key}) : super(key: key);
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  late Map<String, List<Event>> _events;
+  Map<String, List<Event>> _events = {};
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  CalendarFormat _calendarFormat = CalendarFormat.month;
 
   @override
   void initState() {
@@ -24,13 +25,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _loadEvents() async {
-    _events = await EventStorage.loadEvents();
-    setState(() {});
+    final loaded = await EventStorage.loadEvents();
+    setState(() {
+      _events = loaded;
+    });
   }
 
   List<Event> _getEventsForDay(DateTime day) {
     final key = _formatDate(day);
     return _events[key] ?? [];
+  }
+
+  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    setState(() {
+      _selectedDay = selectedDay;
+      _focusedDay = focusedDay;
+    });
   }
 
   String _formatDate(DateTime day) => day.toIso8601String().split('T').first;
@@ -49,20 +59,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-              onPressed: () {
-                final text = controller.text.trim();
-                if (text.isNotEmpty) {
-                  final key = _formatDate(_selectedDay!);
-                  _events.putIfAbsent(key, () => []).add(Event(text));
-                  EventStorage.saveEvents(_events);
-                  setState(() {});
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Save')),
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) {
+                final key = _formatDate(_selectedDay!);
+                _events.putIfAbsent(key, () => []).add(Event(text));
+                EventStorage.saveEvents(_events);
+                setState(() {});
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
         ],
       ),
     );
@@ -74,26 +86,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(title: const Text('My Calendar')),
       body: Column(
         children: [
-          
           TableCalendar<Event>(
             firstDay: DateTime.utc(2025, 1, 1),
             lastDay: DateTime.utc(2099, 12, 31),
             focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             eventLoader: _getEventsForDay,
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
+            onDaySelected: _onDaySelected,
+            onFormatChanged: (format) {
+              if (_calendarFormat != format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              }
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
             },
           ),
           const SizedBox(height: 8),
           Expanded(
             child: ListView(
-              children: _getEventsForDay(_selectedDay ?? DateTime.now())
-                  .map((event) => ListTile(title: Text(event.title)))
-                  .toList(),
+              children: _getEventsForDay(
+                _selectedDay ?? DateTime.now(),
+              ).map((event) => ListTile(title: Text(event.title))).toList(),
             ),
           ),
         ],
@@ -105,4 +122,3 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 }
-
