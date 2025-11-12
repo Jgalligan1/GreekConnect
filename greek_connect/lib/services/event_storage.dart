@@ -7,23 +7,148 @@ import '../models/event.dart';
 class EventStorage {
   static const String _key = 'events';
 
-  static Future<Map<String, List<Event>>> loadEvents() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_key);
-    if (jsonString == null) return {};
-    final decoded = json.decode(jsonString) as Map<String, dynamic>;
-    return decoded.map((key, value) {
-      final list = (value as List).map((e) => Event(e)).toList();
-      return MapEntry(key, list);
-    });
+  // Load events from SharedPreferences
+  // Returns a map where the key is a DateTime and the value is a list of Events
+  static Future<Map<DateTime, List<Event>>> loadEvents() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_key);
+      if (jsonString == null || jsonString.isEmpty) return {};
+      final decoded = json.decode(jsonString) as Map<String, dynamic>;
+      final Map<DateTime, List<Event>> events = {};
+      decoded.forEach((dateString, eventList) {
+        // Parse the date string back to DateTime
+        final date = DateTime.parse(dateString);
+
+        // Convert JSON array to List<Event>
+        final List<Event> parsedEvents = (eventList as List)
+            .map(
+              (eventJson) => Event.fromJson(eventJson as Map<String, dynamic>),
+            )
+            .toList();
+        events[date] = parsedEvents;
+      });
+
+      return events;
+    } catch (e) {
+      print('Error loading events: $e');
+      return {};
+    }
   }
 
-  static Future<void> saveEvents(Map<String, List<Event>> events) async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = json.encode(events.map((key, value) {
-      final list = value.map((e) => e.title).toList();
-      return MapEntry(key, list);
-    }));
-    await prefs.setString(_key, encoded);
+  // Save events to SharedPreferences
+  static Future<bool> saveEvents(Map<DateTime, List<Event>> events) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final Map<String, dynamic> encodable = {};
+
+      events.forEach((date, eventList) {
+        final dateString = date.toIso8601String();
+        encodable[dateString] = eventList.map((e) => e.toJson()).toList();
+      });
+
+      final jsonString = json.encode(encodable);
+      return await prefs.setString(_key, jsonString);
+    } catch (e) {
+      print('Error saving events: $e');
+      return false;
+    }
+  }
+
+  // Add an event to storage
+  static Future<bool> addEvent(DateTime date, Event event) async {
+    final events = await loadEvents();
+    final normalizedDate = _normalizeDate(date);
+
+    if (events[normalizedDate] == null) {
+      events[normalizedDate] = [event];
+    }
+
+    events[normalizedDate]!.add(event);
+    return await saveEvents(events);
+  }
+
+  // Remove an event from storage
+  static Future<bool> removeEvent(DateTime date, Event event) async {
+    final events = await loadEvents();
+    final normalizedDate = _normalizeDate(date);
+
+    if (events[normalizedDate] != null) {
+      events[normalizedDate]!.removeWhere((e) => e.id == event.id);
+
+      if (events[normalizedDate]!.isEmpty) {
+        events.remove(normalizedDate);
+      }
+      return await saveEvents(events);
+    }
+    return false;
+  }
+
+  /// Update an existing event
+  static Future<bool> updateEvent(
+    DateTime date,
+    Event oldEvent,
+    Event newEvent,
+  ) async {
+    final events = await loadEvents();
+    final normalizedDate = _normalizeDate(date);
+
+    if (events[normalizedDate] != null) {
+      final index = events[normalizedDate]!.indexWhere(
+        (e) => e.id == oldEvent.id,
+      );
+      if (index != -1) {
+        events[normalizedDate]![index] = newEvent;
+        return await saveEvents(events);
+      }
+    }
+
+    return false;
+  }
+
+  /// Clear all events from storage
+  static Future<bool> clearAllEvents() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return await prefs.remove(_key);
+    } catch (e) {
+      print('Error clearing events: $e');
+      return false;
+    }
+  }
+
+  /// Get events for a specific date
+  static Future<List<Event>> getEventsForDate(DateTime date) async {
+    final events = await loadEvents();
+    final normalizedDate = _normalizeDate(date);
+    return events[normalizedDate] ?? [];
+  }
+
+  /// Get events for a date range
+  static Future<List<Event>> getEventsForRange(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final events = await loadEvents();
+    final List<Event> rangeEvents = [];
+
+    DateTime current = _normalizeDate(start);
+    final normalizedEnd = _normalizeDate(end);
+
+    while (current.isBefore(normalizedEnd) ||
+        current.isAtSameMomentAs(normalizedEnd)) {
+      if (events[current] != null) {
+        rangeEvents.addAll(events[current]!);
+      }
+      current = current.add(const Duration(days: 1));
+    }
+
+    return rangeEvents;
+  }
+
+  /// Normalize date to UTC midnight for consistent storage
+  static DateTime _normalizeDate(DateTime date) {
+    return DateTime.utc(date.year, date.month, date.day);
   }
 }
