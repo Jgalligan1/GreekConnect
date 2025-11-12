@@ -1,6 +1,7 @@
 // lib/screens/calendar_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/event.dart';
 import '../services/event_storage.dart';
@@ -13,6 +14,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
+  late final ValueNotifier<List<Event>> _selectedEvents;
   Map<String, List<Event>> _events = {};
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -21,26 +23,36 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedDay = _focusedDay;
+    _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
     _loadEvents();
   }
 
   Future<void> _loadEvents() async {
-    final loaded = await EventStorage.loadEvents();
-    setState(() {
-      _events = loaded;
-    });
+    // final loaded = await EventStorage.loadEvents();
+    // setState(() {
+    //   _events[DateTime.utc(2025, 11, 5).toIso8601String().split('T').first] = [
+    //     Event('Sample Event', color: Colors.red),
+    //   ];
+    // });
+    _events = await EventStorage.loadEvents();
+    setState(() {});
   }
 
   List<Event> _getEventsForDay(DateTime day) {
-    final key = _formatDate(day);
+    final normalizedDay = DateTime.utc(day.year, day.month, day.day);
+    final key = _formatDate(normalizedDay);
     return _events[key] ?? [];
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
-    setState(() {
-      _selectedDay = selectedDay;
-      _focusedDay = focusedDay;
-    });
+    if (!isSameDay(_selectedDay, selectedDay)) {
+      setState(() {
+        _selectedDay = selectedDay;
+        _focusedDay = focusedDay;
+      });
+      _selectedEvents.value = _getEventsForDay(selectedDay);
+    }
   }
 
   String _formatDate(DateTime day) => day.toIso8601String().split('T').first;
@@ -104,13 +116,103 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onPageChanged: (focusedDay) {
               _focusedDay = focusedDay;
             },
+            calendarBuilders: CalendarBuilders(
+              todayBuilder: (context, day, focusedDay) {
+                return Container(
+                  margin: const EdgeInsets.all(4.0),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.blue, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${day.day}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ),
+                );
+              },
+
+              selectedBuilder: (context, day, focusedDay) {
+                return Container(
+                  margin: const EdgeInsets.all(4.0),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.indigo,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${day.day}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              },
+
+              markerBuilder: (context, day, events) {
+                if (events.isNotEmpty) {
+                  return Positioned(
+                    bottom: 1,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: events.take(3).map((event) {
+                        return Container(
+                          width: 6,
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.rectangle,
+                            color: (event).color,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                }
+                return const SizedBox();
+              },
+
+              dowBuilder: (context, day) {
+                if (day.weekday == DateTime.sunday) {
+                  return Center(
+                    child: Text(
+                      DateFormat.E().format(day),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  );
+                }
+                return null;
+              },
+            ),
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: ListView(
-              children: _getEventsForDay(
-                _selectedDay ?? DateTime.now(),
-              ).map((event) => ListTile(title: Text(event.title))).toList(),
+            child: ValueListenableBuilder<List<Event>>(
+              valueListenable: _selectedEvents,
+              builder: (context, events, _) {
+                return ListView.builder(
+                  itemCount: events.length,
+                  itemBuilder: (context, index) {
+                    final event = events[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: events[index].color,
+                      ),
+                      title: Text(events[index].title),
+                      subtitle: Text(events[index].description ?? ''),
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
