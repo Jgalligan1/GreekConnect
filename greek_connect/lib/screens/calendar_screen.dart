@@ -29,12 +29,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _loadEvents() async {
-    // final loaded = await EventStorage.loadEvents();
-    // setState(() {
-    //   _events[DateTime.utc(2025, 11, 5).toIso8601String().split('T').first] = [
-    //     Event('Sample Event', color: Colors.red),
-    //   ];
-    // });
     _events = await EventStorage.loadEvents();
     setState(() {});
   }
