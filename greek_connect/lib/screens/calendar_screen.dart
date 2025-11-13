@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/event.dart';
 import '../services/event_storage.dart';
+import '../screens/form_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({Key? key}) : super(key: key);
@@ -37,8 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.dispose();
   }
 
-  /// OPTIMIZED: Load events once on init, then cache in memory
-  /// This prevents repeated disk reads and improves performance
+  /// Load events from storage asynchronously
   Future<void> _loadEvents() async {
     setState(() {
       _isLoading = true;
@@ -71,8 +71,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  /// CRITICAL: Normalize date to UTC midnight for consistent lookup
-  /// This is the #1 reason for missing events in calendars
+  /// Normalize DateTime to remove time component
   DateTime _normalizeDate(DateTime date) {
     return DateTime.utc(date.year, date.month, date.day);
   }
@@ -83,7 +82,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return _events[normalizedDay] ?? [];
   }
 
-  /// OPTIMIZED: Don't call setState() here - prevents lag during swipes
+  /// Handle day selection
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     if (!isSameDay(_selectedDay, selectedDay)) {
       setState(() {
@@ -98,6 +97,37 @@ class _CalendarScreenState extends State<CalendarScreen> {
   /// Add a new event and persist to storage
   Future<void> _addEvent(Event event) async {
     final normalizedDate = _normalizeDate(event.date);
+    if (_selectedDay == null) return;
+    // final controller = TextEditingController();
+
+    // await showDialog(
+    //   context: context,
+    //   builder: (BuildContext context) {
+    //     return AlertDialog(
+    //       title: const Text('Add Event'),
+    //       content: FormScreen(selectedDate: _selectedDay!),
+    //       actions: <Widget>[
+    //         TextButton(
+    //           child: const Text('Cancel'),
+    //           onPressed: () {
+    //             Navigator.of(context).pop();
+    //           },
+    //         ),
+    //         TextButton(
+    //           child: const Text('Add'),
+    //           onPressed: () {
+    //             final newEvent = Event(
+    //               title: controller.text,
+    //               date: _selectedDay!,
+    //               color: 0xFF2196F3,
+    //             );
+    //             Navigator.of(context).pop(newEvent);
+    //           },
+    //         ),
+    //       ],
+    //     );
+    //   },
+    // );
 
     // Update in-memory cache first (immediate UI update)
     setState(() {
@@ -201,7 +231,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                   eventLoader: _getEventsForDay,
 
-                  // CRITICAL: Don't call setState() here!
                   onPageChanged: (focusedDay) {
                     _focusedDay = focusedDay;
                   },
@@ -316,15 +345,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
       // FAB to add events
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // TODO: Show dialog to add event
-          // For now, add a test event
-          final newEvent = Event(
-            title: 'Test Event',
-            description: 'Added at ${DateTime.now()}',
-            date: _selectedDay ?? DateTime.now(),
-            color: 0xFF2196F3,
+          if (_selectedDay == null) return;
+          final newEvent = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Add Event'),
+                  content: FormScreen(selectedDate: _selectedDay!),
+                );
+              },
+            ),
           );
-          await _addEvent(newEvent);
+          if (newEvent != null) {
+            await _addEvent(newEvent);
+          }
         },
         child: const Icon(Icons.add),
       ),
