@@ -98,36 +98,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _addEvent(Event event) async {
     final normalizedDate = _normalizeDate(event.date);
     if (_selectedDay == null) return;
-    // final controller = TextEditingController();
-
-    // await showDialog(
-    //   context: context,
-    //   builder: (BuildContext context) {
-    //     return AlertDialog(
-    //       title: const Text('Add Event'),
-    //       content: FormScreen(selectedDate: _selectedDay!),
-    //       actions: <Widget>[
-    //         TextButton(
-    //           child: const Text('Cancel'),
-    //           onPressed: () {
-    //             Navigator.of(context).pop();
-    //           },
-    //         ),
-    //         TextButton(
-    //           child: const Text('Add'),
-    //           onPressed: () {
-    //             final newEvent = Event(
-    //               title: controller.text,
-    //               date: _selectedDay!,
-    //               color: 0xFF2196F3,
-    //             );
-    //             Navigator.of(context).pop(newEvent);
-    //           },
-    //         ),
-    //       ],
-    //     );
-    //   },
-    // );
 
     // Update in-memory cache first (immediate UI update)
     setState(() {
@@ -349,12 +319,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           final newEvent = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('Add Event'),
-                  content: FormScreen(selectedDate: _selectedDay!),
-                );
-              },
+              builder: (BuildContext context) =>
+                  FormScreen(selectedDate: _selectedDay!),
+              fullscreenDialog: true,
             ),
           );
           if (newEvent != null) {
