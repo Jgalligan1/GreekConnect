@@ -8,7 +8,7 @@ import '../services/event_storage.dart';
 class FormScreen extends StatefulWidget {
   final DateTime selectedDate;
 
-  const FormScreen({Key? key, required this.selectedDate}) : super(key: key);
+  const FormScreen({super.key, required this.selectedDate});
 
   @override
   _FormScreenState createState() => _FormScreenState();
