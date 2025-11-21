@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "greek_connect",
+            "cwd": "greek_connect",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "greek_connect (profile mode)",
+            "cwd": "greek_connect",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "greek_connect (release mode)",
+            "cwd": "greek_connect",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
