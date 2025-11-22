@@ -289,9 +289,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              subtitle: event.description != null
-                                  ? Text(event.description!)
-                                  : null,
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (event.description != null && event.description!.isNotEmpty)
+                                  Text(event.description!),
+
+                                  if (event.location != null && event.location!.isNotEmpty)
+                                    Text("📍 ${event.location}"),
+
+                                  if (event.startTime != null && event.endTime != null)
+                                    Text("⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}",)
+                                  else if (event.startTime != null)
+                                    Text("⏰ Starts at: ${event.startTime!.format(context)}")
+                                  else if (event.endTime != null)
+                                    Text("⏰ Ends at: ${event.endTime!.format(context)}"),
+                                ],
+                              ),
+
                               trailing: IconButton(
                                 icon: const Icon(
                                   Icons.delete,

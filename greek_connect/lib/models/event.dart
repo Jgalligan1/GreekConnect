@@ -7,7 +7,7 @@ class Event {
   final String title;
   final String? description;
   final DateTime date;
-  final int color; // Store as int for JSON serialization
+  final int color; 
   final String? location;
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
@@ -21,10 +21,10 @@ class Event {
     this.location,
     this.startTime,
     this.endTime,
-  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-       color = color ?? 0xFF2196F3; // Default blue color
+  })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        color = color ?? 0xFF2196F3;
 
-  // Convert Event to JSON
+  // Convert Event → JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -33,14 +33,19 @@ class Event {
       'date': date.toIso8601String(),
       'color': color,
       'location': location,
-      'startTime': startTime != null
-          ? '${startTime!.hour}:${startTime!.minute}'
-          : null,
-      'endTime': endTime != null ? '${endTime!.hour}:${endTime!.minute}' : null,
+      'startTime': startTime != null ? _formatTime(startTime!) : null,
+      'endTime': endTime != null ? _formatTime(endTime!) : null,
     };
   }
 
-  // Create Event from JSON
+  // Standardize time format for saving
+  static String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  // Create Event ← JSON
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
       id: json['id'] as String,
@@ -50,34 +55,32 @@ class Event {
       color: json['color'] as int? ?? 0xFF2196F3,
       location: json['location'] as String?,
       startTime: json['startTime'] != null
-          ? _parseTimeOfDay(json['startTime'] as String)
+          ? _parseTimeOfDay(json['startTime'])
           : null,
       endTime: json['endTime'] != null
-          ? _parseTimeOfDay(json['endTime'] as String)
+          ? _parseTimeOfDay(json['endTime'])
           : null,
     );
   }
 
-  // Parse TimeOfDay from string
-  static TimeOfDay? _parseTimeOfDay(String timeString) {
+  // Parse "HH:MM" into TimeOfDay
+  static TimeOfDay _parseTimeOfDay(String? value) {
+    if (value == null) return TimeOfDay(hour: 0, minute: 0);
+
     try {
-      final parts = timeString.split(':');
-      if (parts.length == 2) {
-        return TimeOfDay(
-          hour: int.parse(parts[0]),
-          minute: int.parse(parts[1]),
-        );
-      }
+      final parts = value.split(':');
+      return TimeOfDay(
+        hour: int.parse(parts[0]),
+        minute: int.parse(parts[1]),
+      );
     } catch (e) {
-      print('Error parsing time: $e');
+      print("Time parse error: $e (value: $value)");
+      return TimeOfDay(hour: 0, minute: 0);
     }
-    return null;
   }
 
-  // Get Color object from int
   Color get colorValue => Color(color);
 
-  // Create a copy with modified fields
   Event copyWith({
     String? id,
     String? title,
@@ -104,10 +107,8 @@ class Event {
   String toString() => title;
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Event && other.id == id;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is Event && other.id == id);
 
   @override
   int get hashCode => id.hashCode;

@@ -1,10 +1,6 @@
 // lib/screens/dashboard_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
-import '../models/event.dart';
-import '../services/event_storage.dart';
-import '../screens/form_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
