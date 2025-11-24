@@ -5,6 +5,8 @@ import 'package:table_calendar/table_calendar.dart';
 import '../models/event.dart';
 import '../services/event_storage.dart';
 import '../screens/form_screen.dart';
+import '../widgets/event_form_modal.dart';
+
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -331,14 +333,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           if (_selectedDay == null) return;
-          final newEvent = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (BuildContext context) =>
-                  FormScreen(selectedDate: _selectedDay!),
-              fullscreenDialog: true,
-            ),
+          final newEvent = await showDialog<Event>(
+            context: context,
+            builder: (context) => EventFormModal(selectedDate: _selectedDay!),
           );
+
           if (newEvent != null) {
             await _addEvent(newEvent);
           }
