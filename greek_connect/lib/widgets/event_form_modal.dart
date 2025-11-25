@@ -24,75 +24,116 @@ class _EventFormModalState extends State<EventFormModal> {
     return AlertDialog(
       title: const Text("Add Event"),
       content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9, // Make dialog wider
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
 
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                onSaved: (v) => _title = v!,
-              ),
-
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Description'),
-                onSaved: (v) => _description = v ?? '',
-              ),
-
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Location'),
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                onSaved: (v) => _location = v!,
-              ),
-
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  const Text("Start Time: "),
-                  TextButton(
-                    onPressed: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.now(),
-                      );
-                      if (picked != null) {
-                        setState(() => _startTime = picked);
-                      }
-                    },
-                    child: Text(
-                      _startTime == null
-                          ? "Select"
-                          : _startTime!.format(context),
+                // Title field
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: TextFormField(
+                    style: const TextStyle(fontSize: 18),
+                    decoration: const InputDecoration(
+                      labelText: 'Title',
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 20, horizontal: 12),
                     ),
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    onSaved: (v) => _title = v!,
                   ),
-                ],
-              ),
+                ),
 
-              Row(
-                children: [
-                  const Text("End Time: "),
-                  TextButton(
-                    onPressed: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.now(),
-                      );
-                      if (picked != null) {
-                        setState(() => _endTime = picked);
-                      }
-                    },
-                    child: Text(
-                      _endTime == null
-                          ? "Select"
-                          : _endTime!.format(context),
+                // Description field
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: TextFormField(
+                    style: const TextStyle(fontSize: 18),
+                    decoration: const InputDecoration(
+                      labelText: 'Description',
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 20, horizontal: 12),
                     ),
+                    onSaved: (v) => _description = v ?? '',
                   ),
-                ],
-              ),
-            ],
+                ),
+
+                // Location field
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: TextFormField(
+                    style: const TextStyle(fontSize: 18),
+                    decoration: const InputDecoration(
+                      labelText: 'Location',
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                    ),
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    onSaved: (v) => _location = v!,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Start Time picker
+                Row(
+                  children: [
+                    const Text(
+                      "Start Time: ",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (picked != null) {
+                          setState(() => _startTime = picked);
+                        }
+                      },
+                      child: Text(
+                        _startTime == null
+                            ? "Select"
+                            : _startTime!.format(context),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // End Time picker
+                Row(
+                  children: [
+                    const Text(
+                      "End Time: ",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (picked != null) {
+                          setState(() => _endTime = picked);
+                        }
+                      },
+                      child: Text(
+                        _endTime == null ? "Select" : _endTime!.format(context),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -100,7 +141,10 @@ class _EventFormModalState extends State<EventFormModal> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
+          child: const Text(
+            "Cancel",
+            style: TextStyle(fontSize: 16),
+          ),
         ),
         ElevatedButton(
           onPressed: () {
@@ -120,7 +164,10 @@ class _EventFormModalState extends State<EventFormModal> {
               Navigator.pop(context, newEvent);
             }
           },
-          child: const Text("Save"),
+          child: const Text(
+            "Save",
+            style: TextStyle(fontSize: 16),
+          ),
         ),
       ],
     );
