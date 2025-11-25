@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/event.dart';
 import '../services/event_storage.dart';
-import '../screens/form_screen.dart';
 import '../widgets/event_form_modal.dart';
-
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -31,7 +29,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.initState();
     _selectedDay = _focusedDay;
     _selectedEvents = ValueNotifier([]);
-    _loadEvents(); // Load events asynchronously
+    _loadEvents();
   }
 
   @override
@@ -40,16 +38,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.dispose();
   }
 
-  /// Load events from storage asynchronously
+  // Normalize DateTime to remove time component
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime.utc(date.year, date.month, date.day);
+  }
+
+  // Load events from storage
   Future<void> _loadEvents() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      // Load events from storage
       final loadedEvents = await EventStorage.loadEvents();
-
       setState(() {
         _events = loadedEvents;
         _selectedEvents.value = _getEventsForDay(_selectedDay!);
@@ -57,11 +55,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       });
     } catch (e) {
       print('Error loading events: $e');
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Show error message to user
+      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -73,50 +67,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  /// Normalize DateTime to remove time component
-  DateTime _normalizeDate(DateTime date) {
-    return DateTime.utc(date.year, date.month, date.day);
-  }
-
-  /// Get events for a specific day (from in-memory cache)
+  // Get events for a specific day
   List<Event> _getEventsForDay(DateTime day) {
     final normalizedDay = _normalizeDate(day);
     return _events[normalizedDay] ?? [];
   }
 
-  /// Handle day selection
+  // Handle day selection
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     if (!isSameDay(_selectedDay, selectedDay)) {
       setState(() {
         _selectedDay = selectedDay;
         _focusedDay = focusedDay;
       });
-      // Update events using ValueNotifier (efficient, doesn't rebuild calendar)
       _selectedEvents.value = _getEventsForDay(selectedDay);
     }
   }
 
-  /// Add a new event and persist to storage
+  // Add event
   Future<void> _addEvent(Event event) async {
     final normalizedDate = _normalizeDate(event.date);
     if (_selectedDay == null) return;
 
-    // Update in-memory cache first (immediate UI update)
     setState(() {
-      if (_events[normalizedDate] == null) {
-        _events[normalizedDate] = [];
-      }
+      _events.putIfAbsent(normalizedDate, () => []);
       _events[normalizedDate]!.add(event);
     });
 
-    // Update selected events if viewing this day
     if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
     }
 
-    // Persist to storage (background operation)
     final success = await EventStorage.addEvent(normalizedDate, event);
-
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -127,11 +109,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  /// Delete an event and persist to storage
+  // Delete event
   Future<void> _deleteEvent(Event event) async {
     final normalizedDate = _normalizeDate(event.date);
-
-    // Update in-memory cache first
     setState(() {
       _events[normalizedDate]?.removeWhere((e) => e.id == event.id);
       if (_events[normalizedDate]?.isEmpty ?? false) {
@@ -139,12 +119,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     });
 
-    // Update selected events if viewing this day
     if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
     }
 
-    // Persist to storage
     await EventStorage.removeEvent(normalizedDate, event);
   }
 
@@ -154,9 +132,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         title: const Text('Greek Connect Calendar'),
         actions: [
-          // Refresh button
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadEvents),
-          // Clear all button (for testing)
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             onPressed: () async {
@@ -202,23 +178,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   calendarFormat: _calendarFormat,
                   selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                   eventLoader: _getEventsForDay,
-
-                  onPageChanged: (focusedDay) {
-                    _focusedDay = focusedDay;
-                  },
-
+                  onPageChanged: (focusedDay) => _focusedDay = focusedDay,
                   onDaySelected: _onDaySelected,
-
                   onFormatChanged: (format) {
                     if (_calendarFormat != format) {
-                      setState(() {
-                        _calendarFormat = format;
-                      });
+                      setState(() => _calendarFormat = format);
                     }
                   },
 
                   // Styling
                   calendarStyle: CalendarStyle(
+                    cellPadding: const EdgeInsets.only(top: 2, left: 2),
                     todayDecoration: BoxDecoration(
                       color: Colors.deepPurple.withOpacity(0.5),
                       shape: BoxShape.circle,
@@ -228,21 +198,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       shape: BoxShape.circle,
                     ),
                     markerDecoration: const BoxDecoration(
-                      color: Colors.blue,
+                      color: Colors.transparent,
                       shape: BoxShape.circle,
+                    ),
+                    defaultTextStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
                     ),
                     outsideDaysVisible: false,
                   ),
-
                   headerStyle: const HeaderStyle(
                     formatButtonVisible: true,
                     titleCentered: true,
+                  ),
+
+                  // Event titles below the date number
+                  calendarBuilders: CalendarBuilders(
+                    markerBuilder: (context, date, events) {
+                      final normalizedDay =
+                          DateTime.utc(date.year, date.month, date.day);
+                      final eventsForDay = _events[normalizedDay] ?? [];
+                      if (eventsForDay.isEmpty) return const SizedBox.shrink();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: eventsForDay.take(2).map((e) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 1),
+                            child: Text(
+                              e.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Divider(height: 1),
 
-                // Event list
+                // Event list below
                 Expanded(
                   child: ValueListenableBuilder<List<Event>>(
                     valueListenable: _selectedEvents,
@@ -294,21 +296,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (event.description != null && event.description!.isNotEmpty)
-                                  Text(event.description!),
-
-                                  if (event.location != null && event.location!.isNotEmpty)
+                                  if (event.description != null &&
+                                      event.description!.isNotEmpty)
+                                    Text(event.description!),
+                                  if (event.location != null &&
+                                      event.location!.isNotEmpty)
                                     Text("📍 ${event.location}"),
-
-                                  if (event.startTime != null && event.endTime != null)
-                                    Text("⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}",)
+                                  if (event.startTime != null &&
+                                      event.endTime != null)
+                                    Text(
+                                        "⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}")
                                   else if (event.startTime != null)
-                                    Text("⏰ Starts at: ${event.startTime!.format(context)}")
+                                    Text(
+                                        "⏰ Starts at: ${event.startTime!.format(context)}")
                                   else if (event.endTime != null)
-                                    Text("⏰ Ends at: ${event.endTime!.format(context)}"),
+                                    Text(
+                                        "⏰ Ends at: ${event.endTime!.format(context)}"),
                                 ],
                               ),
-
                               trailing: IconButton(
                                 icon: const Icon(
                                   Icons.delete,
@@ -328,22 +333,37 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ],
             ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () async {
+                if (_selectedDay == null) return;
 
-      // FAB to add events
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          if (_selectedDay == null) return;
-          final newEvent = await showDialog<Event>(
-            context: context,
-            builder: (context) => EventFormModal(selectedDate: _selectedDay!),
-          );
+                final newEvent = await showModalBottomSheet<Event>(
+                  context: context,
+                  isScrollControlled: true, // allows full-height content
+                  backgroundColor: Colors.transparent, // optional: remove default rounded background
+                  builder: (context) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    child: Container(
+                      // Container for a nice sheet look
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      height: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
+                      child: EventFormModal(selectedDate: _selectedDay!),
+                    ),
+                  ),
+                );
 
-          if (newEvent != null) {
-            await _addEvent(newEvent);
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
+                if (newEvent != null) {
+                  await _addEvent(newEvent);
+                }
+              },
+              child: const Icon(Icons.add),
+            ),
+
     );
   }
 }
