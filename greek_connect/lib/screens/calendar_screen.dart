@@ -212,7 +212,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     titleCentered: true,
                   ),
 
-                  // Event titles below the date number
+                  // Show number of events instead of event titles
                   calendarBuilders: CalendarBuilders(
                     markerBuilder: (context, date, events) {
                       final normalizedDay =
@@ -220,23 +220,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       final eventsForDay = _events[normalizedDay] ?? [];
                       if (eventsForDay.isEmpty) return const SizedBox.shrink();
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: eventsForDay.take(2).map((e) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 1),
-                            child: Text(
-                              e.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue,
-                              ),
+                      return Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${eventsForDay.length} ${eventsForDay.length == 1 ? "event" : "events"}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -321,9 +322,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 ),
                                 onPressed: () => _deleteEvent(event),
                               ),
-                              onTap: () {
-                                // TODO: Navigate to event details
-                              },
                             ),
                           );
                         },
@@ -333,37 +331,36 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ],
             ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () async {
-                if (_selectedDay == null) return;
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          if (_selectedDay == null) return;
 
-                final newEvent = await showModalBottomSheet<Event>(
-                  context: context,
-                  isScrollControlled: true, // allows full-height content
-                  backgroundColor: Colors.transparent, // optional: remove default rounded background
-                  builder: (context) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                    ),
-                    child: Container(
-                      // Container for a nice sheet look
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      ),
-                      height: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
-                      child: EventFormModal(selectedDate: _selectedDay!),
-                    ),
-                  ),
-                );
-
-                if (newEvent != null) {
-                  await _addEvent(newEvent);
-                }
-              },
-              child: const Icon(Icons.add),
+          final newEvent = await showModalBottomSheet<Event>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16)),
+                ),
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: EventFormModal(selectedDate: _selectedDay!),
+              ),
             ),
+          );
 
+          if (newEvent != null) {
+            await _addEvent(newEvent);
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
