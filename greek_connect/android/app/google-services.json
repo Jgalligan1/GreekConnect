@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "522669596682",
+    "project_id": "greekconnect-b03ba",
+    "storage_bucket": "greekconnect-b03ba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522669596682:android:36546d740f843b10183ff3",
+        "android_client_info": {
+          "package_name": "com.example.greek_connect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9IDuTp7P8eVIEqk8yIa7EJwpLVhH7hic"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
