@@ -1,6 +1,7 @@
 // lib/screens/dashboard_screen.dart
 
 import 'package:flutter/material.dart';
+import 'settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,17 +20,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // LEFT COLUMN
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(padding: EdgeInsets.only(top: 50.0)),
-                  Text(
+                  const SizedBox(height: 50),
+                  const Text(
                     'Welcome to the Dashboard!',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  Padding(padding: EdgeInsets.only(top: 150.0)),
-                  Padding(
+                  const SizedBox(height: 150),
+                  const Padding(
                     padding: EdgeInsets.only(left: 16.0),
                     child: Text(
                       'My Calendar',
@@ -39,8 +41,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   ),
-                  Padding(padding: EdgeInsets.only(top: 50.0)),
-                  Padding(
+                  const SizedBox(height: 50),
+                  const Padding(
                     padding: EdgeInsets.only(left: 16.0),
                     child: Text(
                       'My Organizations',
@@ -50,26 +52,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   ),
-                  Padding(padding: EdgeInsets.only(top: 50.0)),
+                  const SizedBox(height: 50),
                   Padding(
-                    padding: EdgeInsets.only(left: 16.0),
-                    child: Text(
-                      'Settings',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
+                    padding: const EdgeInsets.only(left: 16.0),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const SettingsScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Settings',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(width: 20),
+
+            // RIGHT COLUMN
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Padding(padding: EdgeInsets.only(top: 125.0)),
+                  SizedBox(height: 125),
                   Padding(
                     padding: EdgeInsets.only(right: 10.0),
                     child: Text(
@@ -80,7 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   ),
-                  Padding(padding: EdgeInsets.only(top: 25.0)),
+                  SizedBox(height: 25),
                   Padding(
                     padding: EdgeInsets.only(left: 10.0),
                     child: Text(
@@ -145,7 +162,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: Colors.blueAccent,
                     height: 50,
                   ),
-                  // Add more dashboard content here
                 ],
               ),
             ),
