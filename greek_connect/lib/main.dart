@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
+import 'package:greek_connect/screens/login_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -65,6 +66,9 @@ class _MyHomePageState extends State<MyHomePage> {
       case 1:
         page = CalendarScreen();
         break;
+      case 2:
+        page = LoginScreen();
+        break;
       default:
         page = DashboardScreen();
     }
@@ -88,6 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 icon: Icon(Icons.calendar_today),
                 label: 'Calendar',
               ),
+              BottomNavigationBarItem(icon: Icon(Icons.login), label: 'Login'),
             ],
           ),
         );
