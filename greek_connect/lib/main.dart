@@ -1,6 +1,7 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:greek_connect/auth/login_or_register.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'package:greek_connect/screens/login_screen.dart';
 import 'screens/calendar_screen.dart';
@@ -67,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = CalendarScreen();
         break;
       case 2:
-        page = LoginScreen();
+        page = LoginOrRegister();
         break;
       default:
         page = DashboardScreen();
