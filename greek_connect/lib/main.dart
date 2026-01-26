@@ -2,9 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:greek_connect/auth/auth.dart';
-import 'package:greek_connect/auth/login_or_register.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
-// import 'package:greek_connect/screens/login_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
