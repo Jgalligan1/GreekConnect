@@ -7,8 +7,9 @@ class Event {
   final String title;
   final String? description;
   final DateTime date;
-  final int color; 
+  final int color;
   final String? location;
+  final String? userId;
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
 
@@ -19,10 +20,11 @@ class Event {
     required this.date,
     int? color,
     this.location,
+    this.userId,
     this.startTime,
     this.endTime,
-  })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        color = color ?? 0xFF2196F3;
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+       color = color ?? 0xFF2196F3;
 
   // Convert Event → JSON
   Map<String, dynamic> toJson() {
@@ -33,6 +35,7 @@ class Event {
       'date': date.toIso8601String(),
       'color': color,
       'location': location,
+      'userId': userId,
       'startTime': startTime != null ? _formatTime(startTime!) : null,
       'endTime': endTime != null ? _formatTime(endTime!) : null,
     };
@@ -54,6 +57,7 @@ class Event {
       date: DateTime.parse(json['date'] as String),
       color: json['color'] as int? ?? 0xFF2196F3,
       location: json['location'] as String?,
+      userId: json['userId'] as String?,
       startTime: json['startTime'] != null
           ? _parseTimeOfDay(json['startTime'])
           : null,
@@ -69,10 +73,7 @@ class Event {
 
     try {
       final parts = value.split(':');
-      return TimeOfDay(
-        hour: int.parse(parts[0]),
-        minute: int.parse(parts[1]),
-      );
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
     } catch (e) {
       print("Time parse error: $e (value: $value)");
       return TimeOfDay(hour: 0, minute: 0);
@@ -88,6 +89,7 @@ class Event {
     DateTime? date,
     int? color,
     String? location,
+    String? userId,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
   }) {
@@ -98,6 +100,7 @@ class Event {
       date: date ?? this.date,
       color: color ?? this.color,
       location: location ?? this.location,
+      userId: userId ?? this.userId,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
     );
