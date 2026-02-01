@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'settings_screen.dart';
+import 'organizations_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -42,16 +43,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 50),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 16.0),
-                    child: Text(
-                      'My Organizations',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
+
+                  // MY ORGANIZATIONS (NOW NAVIGABLE)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const OrganizationsScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'My Organizations',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue,
+                        ),
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 50),
                   Padding(
                     padding: const EdgeInsets.only(left: 16.0),
