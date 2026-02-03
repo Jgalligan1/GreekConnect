@@ -1,10 +1,12 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -57,39 +59,49 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget page;
-    switch (selectedIndex) {
-      case 0:
-        page = DashboardScreen();
-        break;
-      case 1:
-        page = CalendarScreen();
-        break;
-      default:
-        page = DashboardScreen();
-    }
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Scaffold(
-          body: page,
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: selectedIndex,
-            onTap: (index) {
-              setState(() {
-                selectedIndex = index;
-              });
-            },
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                label: 'Dashboard',
+        return StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const AuthPage();
+            }
+
+            Widget page;
+            switch (selectedIndex) {
+              case 0:
+                page = DashboardScreen();
+                break;
+              case 1:
+                page = CalendarScreen();
+                break;
+              default:
+                page = DashboardScreen();
+            }
+
+            return Scaffold(
+              body: page,
+              bottomNavigationBar: BottomNavigationBar(
+                currentIndex: selectedIndex,
+                onTap: (index) {
+                  setState(() {
+                    selectedIndex = index;
+                  });
+                },
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.dashboard),
+                    label: 'Dashboard',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.calendar_today),
+                    label: 'Calendar',
+                  ),
+                ],
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today),
-                label: 'Calendar',
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

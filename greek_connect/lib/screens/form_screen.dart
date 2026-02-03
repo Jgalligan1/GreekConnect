@@ -1,6 +1,7 @@
 // lib/screens/form_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
 
 class FormScreen extends StatefulWidget {
@@ -38,9 +39,7 @@ class _FormScreenState extends State<FormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Event'),
-      ),
+      appBar: AppBar(title: const Text('Add Event')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -51,17 +50,17 @@ class _FormScreenState extends State<FormScreen> {
                 // TITLE FIELD
                 TextFormField(
                   decoration: const InputDecoration(labelText: 'Event Title'),
-                  validator: (value) =>
-                      (value == null || value.isEmpty)
-                          ? 'Please enter an event title'
-                          : null,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter an event title'
+                      : null,
                   onSaved: (value) => _eventTitle = value!,
                 ),
 
                 // DESCRIPTION FIELD
                 TextFormField(
-                  decoration:
-                      const InputDecoration(labelText: 'Event Description'),
+                  decoration: const InputDecoration(
+                    labelText: 'Event Description',
+                  ),
                   onSaved: (value) => _eventDescription = value ?? '',
                 ),
                 const SizedBox(height: 20),
@@ -69,10 +68,9 @@ class _FormScreenState extends State<FormScreen> {
                 // LOCATION FIELD
                 TextFormField(
                   decoration: const InputDecoration(labelText: 'Location'),
-                  validator: (value) =>
-                      (value == null || value.isEmpty)
-                          ? 'Please enter a location'
-                          : null,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter a location'
+                      : null,
                   onSaved: (value) => _eventLocation = value!,
                 ),
 
@@ -135,8 +133,9 @@ class _FormScreenState extends State<FormScreen> {
                       if (_startTime == null || _endTime == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content:
-                                Text("Please select BOTH start and end times."),
+                            content: Text(
+                              "Please select BOTH start and end times.",
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -153,6 +152,7 @@ class _FormScreenState extends State<FormScreen> {
                         location: _eventLocation,
                         startTime: _startTime,
                         endTime: _endTime,
+                        userId: FirebaseAuth.instance.currentUser?.uid,
                       );
 
                       Navigator.pop(context, newEvent);

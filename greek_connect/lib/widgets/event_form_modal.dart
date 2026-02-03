@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
 
 class EventFormModal extends StatefulWidget {
@@ -57,8 +58,10 @@ class _EventFormModalState extends State<EventFormModal> {
                       decoration: const InputDecoration(
                         labelText: 'Title',
                         border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
                       ),
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Required' : null,
@@ -75,8 +78,10 @@ class _EventFormModalState extends State<EventFormModal> {
                       decoration: const InputDecoration(
                         labelText: 'Description',
                         border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
                       ),
                       onSaved: (v) => _description = v ?? '',
                     ),
@@ -90,8 +95,10 @@ class _EventFormModalState extends State<EventFormModal> {
                       decoration: const InputDecoration(
                         labelText: 'Location',
                         border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
                       ),
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Required' : null,
@@ -104,7 +111,10 @@ class _EventFormModalState extends State<EventFormModal> {
                   // ----- Start Time -----
                   Row(
                     children: [
-                      const Text("Start Time: ", style: TextStyle(fontSize: 16)),
+                      const Text(
+                        "Start Time: ",
+                        style: TextStyle(fontSize: 16),
+                      ),
                       TextButton(
                         onPressed: () async {
                           final picked = await showTimePicker(
@@ -157,7 +167,10 @@ class _EventFormModalState extends State<EventFormModal> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text("Cancel", style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
@@ -172,11 +185,15 @@ class _EventFormModalState extends State<EventFormModal> {
                               startTime: _startTime,
                               endTime: _endTime,
                               date: widget.selectedDate,
+                              userId: FirebaseAuth.instance.currentUser?.uid,
                             );
                             Navigator.pop(context, newEvent);
                           }
                         },
-                        child: const Text("Save", style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          "Save",
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ],
                   ),

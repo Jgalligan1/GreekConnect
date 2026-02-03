@@ -1,5 +1,6 @@
 // lib/screens/calendar_screen.dart
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/event.dart';
@@ -32,10 +33,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _loadEvents();
   }
 
-  @override
-  void dispose() {
-    _selectedEvents.dispose();
-    super.dispose();
+  // @override
+  // void dispose() {
+  //   _selectedEvents.dispose();
+  //   super.dispose();
+  // }
+
+  // Sign Out Function
+  void _signOut() {
+    FirebaseAuth.instance.signOut();
   }
 
   // Normalize DateTime to remove time component
@@ -165,6 +171,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               }
             },
           ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _signOut),
         ],
       ),
       body: _isLoading
@@ -215,8 +222,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   // Show number of events instead of event titles
                   calendarBuilders: CalendarBuilders(
                     markerBuilder: (context, date, events) {
-                      final normalizedDay =
-                          DateTime.utc(date.year, date.month, date.day);
+                      final normalizedDay = DateTime.utc(
+                        date.year,
+                        date.month,
+                        date.day,
+                      );
                       final eventsForDay = _events[normalizedDay] ?? [];
                       if (eventsForDay.isEmpty) return const SizedBox.shrink();
 
@@ -224,7 +234,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         alignment: Alignment.bottomCenter,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue,
                             borderRadius: BorderRadius.circular(12),
@@ -306,13 +318,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   if (event.startTime != null &&
                                       event.endTime != null)
                                     Text(
-                                        "⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}")
+                                      "⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}",
+                                    )
                                   else if (event.startTime != null)
                                     Text(
-                                        "⏰ Starts at: ${event.startTime!.format(context)}")
+                                      "⏰ Starts at: ${event.startTime!.format(context)}",
+                                    )
                                   else if (event.endTime != null)
                                     Text(
-                                        "⏰ Ends at: ${event.endTime!.format(context)}"),
+                                      "⏰ Ends at: ${event.endTime!.format(context)}",
+                                    ),
                                 ],
                               ),
                               trailing: IconButton(
@@ -347,7 +362,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16)),
+                    top: Radius.circular(16),
+                  ),
                 ),
                 height: MediaQuery.of(context).size.height * 0.8,
                 child: EventFormModal(selectedDate: _selectedDay!),

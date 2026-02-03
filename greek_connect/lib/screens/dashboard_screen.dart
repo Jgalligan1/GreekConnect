@@ -1,6 +1,7 @@
 // lib/screens/dashboard_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'settings_screen.dart';
 import 'organizations_screen.dart';
 
@@ -12,10 +13,20 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Sign Out Function
+  void _signOut() {
+    FirebaseAuth.instance.signOut();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          IconButton(icon: const Icon(Icons.logout), onPressed: _signOut),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.only(left: 16.0),
         child: Row(
@@ -27,9 +38,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 50),
-                  const Text(
-                    'Welcome to the Dashboard!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  Text(
+                    'Hello ${FirebaseAuth.instance.currentUser!.email!}, Welcome to the Dashboard!',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 150),
                   const Padding(
@@ -76,8 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const SettingsScreen(),
+                            builder: (context) => const SettingsScreen(),
                           ),
                         );
                       },
