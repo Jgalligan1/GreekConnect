@@ -33,11 +33,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _loadEvents();
   }
 
-  @override
-  void dispose() {
-    _selectedEvents.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _selectedEvents.dispose();
+  //   super.dispose();
+  // }
 
   // Sign Out Function
   void _signOut() {
