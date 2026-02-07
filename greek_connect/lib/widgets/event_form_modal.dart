@@ -50,15 +50,49 @@ class _EventFormModalState extends State<EventFormModal> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade700,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(isPhone ? 16 : 12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Create Event',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
                   // ----- Title -----
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: TextFormField(
                       style: const TextStyle(fontSize: 18),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Title',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
+                        border: const OutlineInputBorder(),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                        ),
+                        errorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                        focusedErrorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
                           horizontal: 12,
                         ),
@@ -75,10 +109,22 @@ class _EventFormModalState extends State<EventFormModal> {
                     child: TextFormField(
                       style: const TextStyle(fontSize: 18),
                       maxLines: null,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Description',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
+                        border: const OutlineInputBorder(),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                        ),
+                        errorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                        focusedErrorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
                           horizontal: 12,
                         ),
@@ -92,10 +138,22 @@ class _EventFormModalState extends State<EventFormModal> {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: TextFormField(
                       style: const TextStyle(fontSize: 18),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Location',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
+                        border: const OutlineInputBorder(),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                        ),
+                        errorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
+                        focusedErrorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
                           horizontal: 12,
                         ),
