@@ -136,11 +136,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
     await EventStorage.removeEvent(normalizedDate, event);
   }
 
+  // Edit event
+  Future<void> _editEvent(Event oldEvent, Event updatedEvent) async {
+    final oldDate = _normalizeDate(oldEvent.date);
+    final newDate = _normalizeDate(updatedEvent.date);
+
+    setState(() {
+      _events[oldDate]?.removeWhere((e) => e.id == oldEvent.id);
+      if (_events[oldDate]?.isEmpty ?? false) {
+        _events.remove(oldDate);
+      }
+
+      _events.putIfAbsent(newDate, () => []);
+      final newIndex =
+          _events[newDate]!.indexWhere((e) => e.id == oldEvent.id);
+      if (newIndex == -1) {
+        _events[newDate]!.add(updatedEvent);
+      } else {
+        _events[newDate]![newIndex] = updatedEvent;
+      }
+    });
+
+    if (_selectedDay != null) {
+      _selectedEvents.value = _getEventsForDay(_selectedDay!);
+    }
+
+    await EventStorage.updateEvent(oldDate, oldEvent, updatedEvent);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Greek Connect Calendar'),
+        backgroundColor: _mode == CalendarMode.rsvp ? Colors.red : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -373,27 +402,85 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       onPressed: () => _deleteEvent(event),
                                     )
                                   : null,
-                              onTap: _mode == CalendarMode.rsvp
+                              onTap: _mode == CalendarMode.edit
                                   ? () async {
-                                      final didRsvp =
-                                          await showModalBottomSheet<bool>(
+                                      final updated =
+                                          await showModalBottomSheet<Event>(
                                         context: context,
                                         isScrollControlled: true,
                                         backgroundColor: Colors.transparent,
-                                        builder: (context) =>
-                                            EventRsvpModal(event: event),
+                                        builder: (context) => LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final maxWidth =
+                                                constraints.maxWidth < 700
+                                                    ? constraints.maxWidth
+                                                    : 640.0;
+                                            return Align(
+                                              alignment: Alignment.bottomCenter,
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 12,
+                                                ),
+                                                constraints: BoxConstraints(
+                                                  maxWidth: maxWidth,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .scaffoldBackgroundColor,
+                                                  borderRadius:
+                                                      const BorderRadius
+                                                          .vertical(
+                                                    top: Radius.circular(16),
+                                                  ),
+                                                  boxShadow: const [
+                                                    BoxShadow(
+                                                      color: Colors.black26,
+                                                      blurRadius: 16,
+                                                      offset: Offset(0, -6),
+                                                    ),
+                                                  ],
+                                                ),
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.8,
+                                                child: EventFormModal(
+                                                  selectedDate: event.date,
+                                                  initialEvent: event,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       );
 
-                                      if (didRsvp == true && mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text('RSVP saved'),
-                                          ),
-                                        );
+                                      if (updated != null) {
+                                        await _editEvent(event, updated);
                                       }
                                     }
-                                  : null,
+                                  : _mode == CalendarMode.rsvp
+                                      ? () async {
+                                          final didRsvp =
+                                              await showModalBottomSheet<bool>(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) =>
+                                                EventRsvpModal(event: event),
+                                          );
+
+                                          if (didRsvp == true && mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text('RSVP saved'),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      : null,
                             ),
                           );
                         },
