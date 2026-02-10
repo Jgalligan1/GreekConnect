@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 
-class Event {
+class gcEvent {
   final String id;
   final String title;
   final String? description;
@@ -13,7 +13,7 @@ class Event {
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
 
-  Event({
+  gcEvent({
     String? id,
     required this.title,
     this.description,
@@ -49,8 +49,8 @@ class Event {
   }
 
   // Create Event ← JSON
-  factory Event.fromJson(Map<String, dynamic> json) {
-    return Event(
+  factory gcEvent.fromJson(Map<String, dynamic> json) {
+    return gcEvent(
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
@@ -82,7 +82,7 @@ class Event {
 
   Color get colorValue => Color(color);
 
-  Event copyWith({
+  gcEvent copyWith({
     String? id,
     String? title,
     String? description,
@@ -93,7 +93,7 @@ class Event {
     TimeOfDay? startTime,
     TimeOfDay? endTime,
   }) {
-    return Event(
+    return gcEvent(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -111,7 +111,7 @@ class Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || (other is Event && other.id == id);
+      identical(this, other) || (other is gcEvent && other.id == id);
 
   @override
   int get hashCode => id.hashCode;

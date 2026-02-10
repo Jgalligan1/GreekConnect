@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 
-class OrganizationsScreen extends StatelessWidget {
-  const OrganizationsScreen({super.key});
+class gcOrganizationsScreen extends StatelessWidget {
+  const gcOrganizationsScreen({super.key});
 
   // Temporary mock data
-  final List<String> myOrganizations = const [
-    'Chi Phi',
-    'FSL Office',
-  ];
+  final List<String> myOrganizations = const ['Chi Phi', 'FSL Office'];
 
   final List<String> otherOrganizations = const [
     'OTHER ORGANIZATIONS',
@@ -20,9 +17,7 @@ class OrganizationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Organizations'),
-      ),
+      appBar: AppBar(title: const Text('Organizations')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
@@ -30,10 +25,7 @@ class OrganizationsScreen extends StatelessWidget {
             // MY ORGANIZATIONS HEADER
             const Text(
               'My Organizations',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
 
@@ -41,12 +33,7 @@ class OrganizationsScreen extends StatelessWidget {
             ...myOrganizations.map(
               (org) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  org,
-                  style: const TextStyle(
-                    fontSize: 18,
-                  ),
-                ),
+                child: Text(org, style: const TextStyle(fontSize: 18)),
               ),
             ),
 
@@ -57,10 +44,7 @@ class OrganizationsScreen extends StatelessWidget {
             // OTHER ORGANIZATIONS HEADER
             const Text(
               'Other Organizations',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
 
@@ -68,12 +52,7 @@ class OrganizationsScreen extends StatelessWidget {
             ...otherOrganizations.map(
               (org) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  org,
-                  style: const TextStyle(
-                    fontSize: 18,
-                  ),
-                ),
+                child: Text(org, style: const TextStyle(fontSize: 18)),
               ),
             ),
           ],

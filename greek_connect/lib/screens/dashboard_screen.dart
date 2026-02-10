@@ -5,14 +5,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'settings_screen.dart';
 import 'organizations_screen.dart';
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+class gcDashboardScreen extends StatefulWidget {
+  const gcDashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<gcDashboardScreen> createState() => _gcDashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _gcDashboardScreenState extends State<gcDashboardScreen> {
   // Sign Out Function
   void _signOut() {
     FirebaseAuth.instance.signOut();
@@ -66,8 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const OrganizationsScreen(),
+                            builder: (context) => const gcOrganizationsScreen(),
                           ),
                         );
                       },
@@ -90,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const SettingsScreen(),
+                            builder: (context) => const gcSettingsScreen(),
                           ),
                         );
                       },

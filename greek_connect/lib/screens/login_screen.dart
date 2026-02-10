@@ -2,15 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:greek_connect/widgets/text_field.dart';
 
-class LoginScreen extends StatefulWidget {
+class gcLoginScreen extends StatefulWidget {
   final Function()? onTap;
-  const LoginScreen({super.key, this.onTap});
+  const gcLoginScreen({super.key, this.onTap});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<gcLoginScreen> createState() => _gcLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _gcLoginScreenState extends State<gcLoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -64,13 +64,13 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              MyTextField(
+              gcMyTextField(
                 controller: _emailController,
                 hintText: 'Email',
                 obscureText: false,
               ),
               const SizedBox(height: 16),
-              MyTextField(
+              gcMyTextField(
                 controller: _passwordController,
                 hintText: 'Password',
                 obscureText: true,

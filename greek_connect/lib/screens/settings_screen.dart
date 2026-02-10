@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+class gcSettingsScreen extends StatefulWidget {
+  const gcSettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  State<gcSettingsScreen> createState() => _gcSettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _gcSettingsScreenState extends State<gcSettingsScreen> {
   // Notification type toggles
   bool newEvents = true;
   bool myUpcomingEvents = true;
@@ -21,9 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(

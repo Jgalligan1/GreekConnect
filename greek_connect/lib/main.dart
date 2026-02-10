@@ -11,13 +11,15 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: gcDefaultFirebaseOptions.currentPlatform,
+  );
   await initializeDateFormatting();
-  runApp(const MyApp());
+  runApp(const gcMyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class gcMyApp extends StatelessWidget {
+  const gcMyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,19 +44,19 @@ class MyApp extends StatelessWidget {
 
         useMaterial3: true,
       ),
-      home: MyHomePage(),
+      home: gcMyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+class gcMyHomePage extends StatefulWidget {
+  const gcMyHomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<gcMyHomePage> createState() => _gcMyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _gcMyHomePageState extends State<gcMyHomePage> {
   int selectedIndex = 0;
 
   @override
@@ -65,19 +67,19 @@ class _MyHomePageState extends State<MyHomePage> {
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return const AuthPage();
+              return const gcAuthPage();
             }
 
             Widget page;
             switch (selectedIndex) {
               case 0:
-                page = DashboardScreen();
+                page = gcDashboardScreen();
                 break;
               case 1:
-                page = CalendarScreen();
+                page = gcCalendarScreen();
                 break;
               default:
-                page = DashboardScreen();
+                page = gcDashboardScreen();
             }
 
             return Scaffold(

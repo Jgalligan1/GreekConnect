@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 
 import 'package:greek_connect/widgets/text_field.dart';
 
-class RegisterScreen extends StatefulWidget {
+class gcRegisterScreen extends StatefulWidget {
   final Function()? onTap;
-  const RegisterScreen({super.key, this.onTap});
+  const gcRegisterScreen({super.key, this.onTap});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<gcRegisterScreen> createState() => _gcRegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _gcRegisterScreenState extends State<gcRegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -71,19 +71,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              MyTextField(
+              gcMyTextField(
                 controller: _emailController,
                 hintText: 'Email',
                 obscureText: false,
               ),
               const SizedBox(height: 16),
-              MyTextField(
+              gcMyTextField(
                 controller: _passwordController,
                 hintText: 'Password',
                 obscureText: true,
               ),
               const SizedBox(height: 16),
-              MyTextField(
+              gcMyTextField(
                 controller: _confirmPasswordController,
                 hintText: 'Confirm Password',
                 obscureText: true,

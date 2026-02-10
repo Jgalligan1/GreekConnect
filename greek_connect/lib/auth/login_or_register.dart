@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:greek_connect/screens/login_screen.dart';
 import 'package:greek_connect/screens/register_screen.dart';
 
-class LoginOrRegister extends StatefulWidget {
-  const LoginOrRegister({super.key});
+class gcLoginOrRegister extends StatefulWidget {
+  const gcLoginOrRegister({super.key});
 
   @override
-  State<LoginOrRegister> createState() => _LoginOrRegisterState();
+  State<gcLoginOrRegister> createState() => _gcLoginOrRegisterState();
 }
 
-class _LoginOrRegisterState extends State<LoginOrRegister> {
+class _gcLoginOrRegisterState extends State<gcLoginOrRegister> {
   bool showLogin = true;
 
   void toggleScreens() {
@@ -21,9 +21,9 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
   @override
   Widget build(BuildContext context) {
     if (showLogin) {
-      return LoginScreen(onTap: toggleScreens);
+      return gcLoginScreen(onTap: toggleScreens);
     } else {
-      return RegisterScreen(onTap: toggleScreens);
+      return gcRegisterScreen(onTap: toggleScreens);
     }
   }
 }

@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
 
-class FormScreen extends StatefulWidget {
+class gcFormScreen extends StatefulWidget {
   final DateTime selectedDate;
 
-  const FormScreen({super.key, required this.selectedDate});
+  const gcFormScreen({super.key, required this.selectedDate});
 
   @override
-  _FormScreenState createState() => _FormScreenState();
+  State<gcFormScreen> createState() => _gcFormScreenState();
 }
 
-class _FormScreenState extends State<FormScreen> {
+class _gcFormScreenState extends State<gcFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late DateTime _eventDate;
 
@@ -144,7 +144,7 @@ class _FormScreenState extends State<FormScreen> {
 
                       _formKey.currentState!.save();
 
-                      final newEvent = Event(
+                      final newEvent = gcEvent(
                         id: UniqueKey().toString(),
                         title: _eventTitle,
                         description: _eventDescription,

@@ -7,17 +7,17 @@ import '../models/event.dart';
 import '../services/event_storage.dart';
 import '../widgets/event_form_modal.dart';
 
-class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+class gcCalendarScreen extends StatefulWidget {
+  const gcCalendarScreen({super.key});
 
   @override
-  State<CalendarScreen> createState() => _CalendarScreenState();
+  State<gcCalendarScreen> createState() => _gcCalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _gcCalendarScreenState extends State<gcCalendarScreen> {
   // Calendar state variables
-  late final ValueNotifier<List<Event>> _selectedEvents;
-  Map<DateTime, List<Event>> _events = {};
+  late final ValueNotifier<List<gcEvent>> _selectedEvents;
+  Map<DateTime, List<gcEvent>> _events = {};
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -53,7 +53,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _loadEvents() async {
     setState(() => _isLoading = true);
     try {
-      final loadedEvents = await EventStorage.loadEvents();
+      final loadedEvents = await gcEventStorage.loadEvents();
       setState(() {
         _events = loadedEvents;
         _selectedEvents.value = _getEventsForDay(_selectedDay!);
@@ -74,7 +74,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // Get events for a specific day
-  List<Event> _getEventsForDay(DateTime day) {
+  List<gcEvent> _getEventsForDay(DateTime day) {
     final normalizedDay = _normalizeDate(day);
     return _events[normalizedDay] ?? [];
   }
@@ -91,7 +91,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // Add event
-  Future<void> _addEvent(Event event) async {
+  Future<void> _addEvent(gcEvent event) async {
     final normalizedDate = _normalizeDate(event.date);
     if (_selectedDay == null) return;
 
@@ -104,7 +104,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
     }
 
-    final success = await EventStorage.addEvent(normalizedDate, event);
+    final success = await gcEventStorage.addEvent(normalizedDate, event);
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -116,7 +116,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // Delete event
-  Future<void> _deleteEvent(Event event) async {
+  Future<void> _deleteEvent(gcEvent event) async {
     final normalizedDate = _normalizeDate(event.date);
     setState(() {
       _events[normalizedDate]?.removeWhere((e) => e.id == event.id);
@@ -129,7 +129,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
     }
 
-    await EventStorage.removeEvent(normalizedDate, event);
+    await gcEventStorage.removeEvent(normalizedDate, event);
   }
 
   @override
@@ -166,7 +166,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               );
 
               if (confirmed == true) {
-                await EventStorage.clearAllEvents();
+                await gcEventStorage.clearAllEvents();
                 _loadEvents();
               }
             },
@@ -178,7 +178,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                TableCalendar<Event>(
+                TableCalendar<gcEvent>(
                   firstDay: DateTime.utc(2020, 1, 1),
                   lastDay: DateTime.utc(2030, 12, 31),
                   focusedDay: _focusedDay,
@@ -259,7 +259,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
                 // Event list below
                 Expanded(
-                  child: ValueListenableBuilder<List<Event>>(
+                  child: ValueListenableBuilder<List<gcEvent>>(
                     valueListenable: _selectedEvents,
                     builder: (context, events, _) {
                       if (events.isEmpty) {
@@ -350,7 +350,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         onPressed: () async {
           if (_selectedDay == null) return;
 
-          final newEvent = await showModalBottomSheet<Event>(
+          final newEvent = await showModalBottomSheet<gcEvent>(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
@@ -381,7 +381,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ],
                     ),
                     height: MediaQuery.of(context).size.height * 0.8,
-                    child: EventFormModal(selectedDate: _selectedDay!),
+                    child: gcEventFormModal(selectedDate: _selectedDay!),
                   ),
                 );
               },

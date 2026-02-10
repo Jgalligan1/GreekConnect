@@ -5,13 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event.dart';
 
-class EventStorage {
+class gcEventStorage {
   static const String _key = 'events';
 
   // Load events from SharedPreferences
   // Returns a map where the key is a DateTime and the value is a list of Events
-  static Future<Map<DateTime, List<Event>>> loadEvents() async {
-    final Map<DateTime, List<Event>> events = {};
+  static Future<Map<DateTime, List<gcEvent>>> loadEvents() async {
+    final Map<DateTime, List<gcEvent>> events = {};
     try {
       // Try to load from Firestore first
       final snapshot = await FirebaseFirestore.instance
@@ -23,7 +23,7 @@ class EventStorage {
           final data = doc.data();
           // Ensure id is present
           data['id'] = data['id'] ?? doc.id;
-          final event = Event.fromJson(Map<String, dynamic>.from(data));
+          final event = gcEvent.fromJson(Map<String, dynamic>.from(data));
           final normalized = _normalizeDate(event.date);
           events.putIfAbsent(normalized, () => []);
           events[normalized]!.add(event);
@@ -55,10 +55,10 @@ class EventStorage {
 
         decoded.forEach((dateString, eventList) {
           final date = DateTime.parse(dateString);
-          final List<Event> parsedEvents = (eventList as List)
+          final List<gcEvent> parsedEvents = (eventList as List)
               .map(
                 (eventJson) =>
-                    Event.fromJson(eventJson as Map<String, dynamic>),
+                    gcEvent.fromJson(eventJson as Map<String, dynamic>),
               )
               .toList();
           events[date] = parsedEvents;
@@ -72,7 +72,7 @@ class EventStorage {
   }
 
   // Save events to SharedPreferences
-  static Future<bool> saveEvents(Map<DateTime, List<Event>> events) async {
+  static Future<bool> saveEvents(Map<DateTime, List<gcEvent>> events) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -93,7 +93,7 @@ class EventStorage {
   }
 
   // Add an event to storage
-  static Future<bool> addEvent(DateTime date, Event event) async {
+  static Future<bool> addEvent(DateTime date, gcEvent event) async {
     final normalizedDate = _normalizeDate(date);
     try {
       final docRef = FirebaseFirestore.instance
@@ -118,7 +118,7 @@ class EventStorage {
   }
 
   // Remove an event from storage
-  static Future<bool> removeEvent(DateTime date, Event event) async {
+  static Future<bool> removeEvent(DateTime date, gcEvent event) async {
     final normalizedDate = _normalizeDate(date);
     try {
       final docRef = FirebaseFirestore.instance
@@ -149,8 +149,8 @@ class EventStorage {
   /// Update an existing event
   static Future<bool> updateEvent(
     DateTime date,
-    Event oldEvent,
-    Event newEvent,
+    gcEvent oldEvent,
+    gcEvent newEvent,
   ) async {
     final normalizedDate = _normalizeDate(date);
     try {
@@ -210,19 +210,19 @@ class EventStorage {
   }
 
   /// Get events for a specific date
-  static Future<List<Event>> getEventsForDate(DateTime date) async {
+  static Future<List<gcEvent>> getEventsForDate(DateTime date) async {
     final events = await loadEvents();
     final normalizedDate = _normalizeDate(date);
     return events[normalizedDate] ?? [];
   }
 
   /// Get events for a date range
-  static Future<List<Event>> getEventsForRange(
+  static Future<List<gcEvent>> getEventsForRange(
     DateTime start,
     DateTime end,
   ) async {
     final events = await loadEvents();
-    final List<Event> rangeEvents = [];
+    final List<gcEvent> rangeEvents = [];
 
     DateTime current = _normalizeDate(start);
     final normalizedEnd = _normalizeDate(end);

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
 
-class EventFormModal extends StatefulWidget {
+class gcEventFormModal extends StatefulWidget {
   final DateTime selectedDate;
 
-  const EventFormModal({super.key, required this.selectedDate});
+  const gcEventFormModal({super.key, required this.selectedDate});
 
   @override
-  State<EventFormModal> createState() => _EventFormModalState();
+  State<gcEventFormModal> createState() => _gcEventFormModalState();
 }
 
-class _EventFormModalState extends State<EventFormModal> {
+class _gcEventFormModalState extends State<gcEventFormModal> {
   final _formKey = GlobalKey<FormState>();
 
   String _title = '';
@@ -235,7 +235,7 @@ class _EventFormModalState extends State<EventFormModal> {
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
-                            final newEvent = Event(
+                            final newEvent = gcEvent(
                               id: UniqueKey().toString(),
                               title: _title,
                               description: _description,
