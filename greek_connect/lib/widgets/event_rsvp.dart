@@ -14,18 +14,53 @@ class EventRsvpModal extends StatefulWidget {
 
 class _EventRsvpModalState extends State<EventRsvpModal> {
   bool _isSaving = false;
+  bool? _alreadyRsvpd;
 
-  Future<void> _saveRsvp(BuildContext context) async {
-    if (_isSaving) return;
-    setState(() => _isSaving = true);
+  @override
+  void initState() {
+    super.initState();
+    _checkRsvpStatus();
+  }
+
+  Future<void> _checkRsvpStatus() async {
+    // Default to not RSVPd while loading
+    setState(() => _alreadyRsvpd = null);
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      // Not signed in: treat as not RSVPd (button will prompt sign-in on save)
+      setState(() => _alreadyRsvpd = false);
+      return;
+    }
+
+    try {
+      final docId = '${widget.event.id}_${user.uid}';
+      final docRef = FirebaseFirestore.instance.collection('rsvps').doc(docId);
+      final snapshot = await docRef.get();
+      if (!mounted) return;
+      setState(() => _alreadyRsvpd = snapshot.exists);
+    } catch (e) {
+      if (!mounted) return;
+      // On error, default to not RSVPd so user can try
+      setState(() => _alreadyRsvpd = false);
+    }
+  }
+
+  Future<void> _saveRsvp() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+
+    // Capture states synchronously to avoid using BuildContext across async gaps.
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      messenger.showSnackBar(
         const SnackBar(content: Text('You must be signed in to RSVP')),
       );
       setState(() => _isSaving = false);
-      return Navigator.pop(context, false);
+      return navigator.pop(false);
     }
 
     try {
@@ -38,13 +73,13 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      Navigator.pop(context, true);
+      if (!mounted) return;
+      navigator.pop(true);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to save RSVP: $e')));
-      // Close the modal even on error so the user isn't stuck behind it.
-      Navigator.pop(context, false);
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to save RSVP: $e')),
+      );
+      if (mounted) navigator.pop(false);
     }
   }
 
@@ -150,16 +185,30 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
               child: Text(_formatTimeRange(context)),
             ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _isSaving ? null : () => _saveRsvp(context),
-            child: _isSaving
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('RSVP'),
-          ),
+          if (_alreadyRsvpd == null)
+            const Center(child: CircularProgressIndicator())
+          else if (_alreadyRsvpd == true)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  "You have already RSVP'd to this event",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            )
+          else
+            ElevatedButton(
+              onPressed: _isSaving ? null : () => _saveRsvp(),
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('RSVP'),
+            ),
         ],
       ),
     );
