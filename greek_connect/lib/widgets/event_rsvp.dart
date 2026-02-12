@@ -1,10 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
 
-class EventRsvpModal extends StatelessWidget {
+class EventRsvpModal extends StatefulWidget {
   final Event event;
 
   const EventRsvpModal({super.key, required this.event});
+
+  @override
+  State<EventRsvpModal> createState() => _EventRsvpModalState();
+}
+
+class _EventRsvpModalState extends State<EventRsvpModal> {
+  bool _isSaving = false;
+
+  Future<void> _saveRsvp(BuildContext context) async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be signed in to RSVP')),
+      );
+      setState(() => _isSaving = false);
+      return Navigator.pop(context, false);
+    }
+
+    try {
+      final docId = '${widget.event.id}_${user.uid}';
+      final docRef = FirebaseFirestore.instance.collection('rsvps').doc(docId);
+      await docRef.set({
+        'eventId': widget.event.id,
+        'userId': user.uid,
+        'title': widget.event.title,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save RSVP: $e')));
+      // Close the modal even on error so the user isn't stuck behind it.
+      Navigator.pop(context, false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +63,7 @@ class EventRsvpModal extends StatelessWidget {
         builder: (context, scrollController) {
           return Material(
             color: Colors.white,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: _buildContent(context, scrollController),
           );
         },
@@ -32,10 +72,7 @@ class EventRsvpModal extends StatelessWidget {
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 520,
-          maxHeight: 520,
-        ),
+        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 520),
         child: Material(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -63,52 +100,65 @@ class EventRsvpModal extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.blue.shade700,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
             ),
-            child: const Text(
-              'RSVP',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'RSVP',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  tooltip: 'Close',
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            event.title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            widget.event.title,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          if (event.description != null && event.description!.isNotEmpty)
+          if (widget.event.description != null &&
+              widget.event.description!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(event.description!),
+              child: Text(widget.event.description!),
             ),
-          if (event.location != null && event.location!.isNotEmpty)
+          if (widget.event.location != null &&
+              widget.event.location!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('Location: ${event.location}'),
+              child: Text('Location: ${widget.event.location}'),
             ),
-          if (event.startTime != null || event.endTime != null)
+          if (widget.event.startTime != null || widget.event.endTime != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(_formatTimeRange(context)),
             ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('RSVP'),
+            onPressed: _isSaving ? null : () => _saveRsvp(context),
+            child: _isSaving
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('RSVP'),
           ),
         ],
       ),
@@ -116,6 +166,7 @@ class EventRsvpModal extends StatelessWidget {
   }
 
   String _formatTimeRange(BuildContext context) {
+    final event = widget.event;
     if (event.startTime != null && event.endTime != null) {
       return 'Time: ${event.startTime!.format(context)} - ${event.endTime!.format(context)}';
     }
