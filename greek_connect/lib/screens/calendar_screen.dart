@@ -6,6 +6,9 @@ import 'package:table_calendar/table_calendar.dart';
 import '../models/event.dart';
 import '../services/event_storage.dart';
 import '../widgets/event_form_modal.dart';
+import '../widgets/event_rsvp.dart';
+
+enum CalendarMode { edit, rsvp }
 
 class gcCalendarScreen extends StatefulWidget {
   const gcCalendarScreen({super.key});
@@ -21,6 +24,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  CalendarMode _mode = CalendarMode.edit;
 
   // Loading state
   bool _isLoading = true;
@@ -132,11 +136,70 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
     await gcEventStorage.removeEvent(normalizedDate, event);
   }
 
+  // Edit event
+  Future<void> _editEvent(gcEvent oldEvent, gcEvent updatedEvent) async {
+    final oldDate = _normalizeDate(oldEvent.date);
+    final newDate = _normalizeDate(updatedEvent.date);
+
+    setState(() {
+      _events[oldDate]?.removeWhere((e) => e.id == oldEvent.id);
+      if (_events[oldDate]?.isEmpty ?? false) {
+        _events.remove(oldDate);
+      }
+
+      _events.putIfAbsent(newDate, () => []);
+      final newIndex =
+          _events[newDate]!.indexWhere((e) => e.id == oldEvent.id);
+      if (newIndex == -1) {
+        _events[newDate]!.add(updatedEvent);
+      } else {
+        _events[newDate]![newIndex] = updatedEvent;
+      }
+    });
+
+    if (_selectedDay != null) {
+      _selectedEvents.value = _getEventsForDay(_selectedDay!);
+    }
+
+    await gcEventStorage.updateEvent(oldDate, oldEvent, updatedEvent);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Greek Connect Calendar'),
+        backgroundColor: _mode == CalendarMode.rsvp ? Colors.red : null,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SegmentedButton<CalendarMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: CalendarMode.edit,
+                        label: Text('Edit'),
+                        icon: Icon(Icons.edit),
+                      ),
+                      ButtonSegment(
+                        value: CalendarMode.rsvp,
+                        label: Text('RSVP'),
+                        icon: Icon(Icons.event_available),
+                      ),
+                    ],
+                    selected: {_mode},
+                    onSelectionChanged: (selection) {
+                      setState(() => _mode = selection.first);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadEvents),
           IconButton(
@@ -330,13 +393,94 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                                     ),
                                 ],
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () => _deleteEvent(event),
-                              ),
+                              trailing: _mode == CalendarMode.edit
+                                  ? IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () => _deleteEvent(event),
+                                    )
+                                  : null,
+                              onTap: _mode == CalendarMode.edit
+                                  ? () async {
+                                        final updated =
+                                          await showModalBottomSheet<gcEvent>(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) => LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final maxWidth =
+                                                constraints.maxWidth < 700
+                                                    ? constraints.maxWidth
+                                                    : 640.0;
+                                            return Align(
+                                              alignment: Alignment.bottomCenter,
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 12,
+                                                ),
+                                                constraints: BoxConstraints(
+                                                  maxWidth: maxWidth,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .scaffoldBackgroundColor,
+                                                  borderRadius:
+                                                      const BorderRadius
+                                                          .vertical(
+                                                    top: Radius.circular(16),
+                                                  ),
+                                                  boxShadow: const [
+                                                    BoxShadow(
+                                                      color: Colors.black26,
+                                                      blurRadius: 16,
+                                                      offset: Offset(0, -6),
+                                                    ),
+                                                  ],
+                                                ),
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.8,
+                                                child: gcEventFormModal(
+                                                  selectedDate: event.date,
+                                                  initialEvent: event,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      );
+
+                                      if (updated != null) {
+                                        await _editEvent(event, updated);
+                                      }
+                                    }
+                                  : _mode == CalendarMode.rsvp
+                                      ? () async {
+                                          final didRsvp =
+                                              await showModalBottomSheet<bool>(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) =>
+                                                EventRsvpModal(event: event),
+                                          );
+
+                                          if (didRsvp == true && mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text('RSVP saved'),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      : null,
                             ),
                           );
                         },
@@ -346,54 +490,56 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          if (_selectedDay == null) return;
+      floatingActionButton: _mode == CalendarMode.edit
+          ? FloatingActionButton(
+              onPressed: () async {
+                if (_selectedDay == null) return;
 
-          final newEvent = await showModalBottomSheet<gcEvent>(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => LayoutBuilder(
-              builder: (context, constraints) {
-                final maxWidth = constraints.maxWidth < 700
-                    ? constraints.maxWidth
-                    : 640.0;
-                return Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    constraints: BoxConstraints(maxWidth: maxWidth),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 16,
-                          offset: Offset(0, -6),
+                final newEvent = await showModalBottomSheet<gcEvent>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => LayoutBuilder(
+                    builder: (context, constraints) {
+                      final maxWidth = constraints.maxWidth < 700
+                          ? constraints.maxWidth
+                          : 640.0;
+                      return Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          constraints: BoxConstraints(maxWidth: maxWidth),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 16,
+                                offset: Offset(0, -6),
+                              ),
+                            ],
+                          ),
+                          height: MediaQuery.of(context).size.height * 0.8,
+                          child: gcEventFormModal(selectedDate: _selectedDay!),
                         ),
-                      ],
-                    ),
-                    height: MediaQuery.of(context).size.height * 0.8,
-                    child: gcEventFormModal(selectedDate: _selectedDay!),
+                      );
+                    },
                   ),
                 );
-              },
-            ),
-          );
 
-          if (newEvent != null) {
-            await _addEvent(newEvent);
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
+                if (newEvent != null) {
+                  await _addEvent(newEvent);
+                }
+              },
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

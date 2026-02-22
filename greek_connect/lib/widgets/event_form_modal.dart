@@ -4,8 +4,13 @@ import '../models/event.dart';
 
 class gcEventFormModal extends StatefulWidget {
   final DateTime selectedDate;
+  final gcEvent? initialEvent;
 
-  const gcEventFormModal({super.key, required this.selectedDate});
+  const gcEventFormModal({
+    super.key,
+    required this.selectedDate,
+    this.initialEvent,
+  });
 
   @override
   State<gcEventFormModal> createState() => _gcEventFormModalState();
@@ -19,6 +24,19 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
   String _location = '';
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialEvent;
+    if (initial != null) {
+      _title = initial.title;
+      _description = initial.description ?? '';
+      _location = initial.location ?? '';
+      _startTime = initial.startTime;
+      _endTime = initial.endTime;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,9 +79,11 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                         top: Radius.circular(isPhone ? 16 : 12),
                       ),
                     ),
-                    child: const Text(
-                      'Create Event',
-                      style: TextStyle(
+                    child: Text(
+                      widget.initialEvent == null
+                          ? 'Create Event'
+                          : 'Edit Event',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -77,6 +97,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: TextFormField(
                       style: const TextStyle(fontSize: 18),
+                      initialValue: _title,
                       decoration: InputDecoration(
                         labelText: 'Title',
                         border: const OutlineInputBorder(),
@@ -109,6 +130,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                     child: TextFormField(
                       style: const TextStyle(fontSize: 18),
                       maxLines: null,
+                      initialValue: _description,
                       decoration: InputDecoration(
                         labelText: 'Description',
                         border: const OutlineInputBorder(),
@@ -138,6 +160,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: TextFormField(
                       style: const TextStyle(fontSize: 18),
+                      initialValue: _location,
                       decoration: InputDecoration(
                         labelText: 'Location',
                         border: const OutlineInputBorder(),
@@ -177,7 +200,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                         onPressed: () async {
                           final picked = await showTimePicker(
                             context: context,
-                            initialTime: TimeOfDay.now(),
+                            initialTime: _startTime ?? TimeOfDay.now(),
                           );
                           if (picked != null) {
                             setState(() => _startTime = picked);
@@ -201,7 +224,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                         onPressed: () async {
                           final picked = await showTimePicker(
                             context: context,
-                            initialTime: TimeOfDay.now(),
+                            initialTime: _endTime ?? TimeOfDay.now(),
                           );
                           if (picked != null) {
                             setState(() => _endTime = picked);
@@ -235,15 +258,18 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
+                            final existing = widget.initialEvent;
                             final newEvent = gcEvent(
-                              id: UniqueKey().toString(),
+                              id: existing?.id ?? UniqueKey().toString(),
                               title: _title,
                               description: _description,
                               location: _location,
                               startTime: _startTime,
                               endTime: _endTime,
                               date: widget.selectedDate,
-                              userId: FirebaseAuth.instance.currentUser?.uid,
+                              userId: existing?.userId ??
+                                  FirebaseAuth.instance.currentUser?.uid,
+                              color: existing?.color,
                             );
                             Navigator.pop(context, newEvent);
                           }
