@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'screens/calendar_screen.dart';
+import 'screens/notifications_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -78,6 +79,9 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
               case 1:
                 page = gcCalendarScreen();
                 break;
+              case 2:
+                page = gcNotificationsScreen();
+                break;
               default:
                 page = gcDashboardScreen();
             }
@@ -99,6 +103,10 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
                   BottomNavigationBarItem(
                     icon: Icon(Icons.calendar_today),
                     label: 'Calendar',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.notifications),
+                    label: 'Notifications',
                   ),
                 ],
               ),
