@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/event.dart';
+import '../services/event_storage.dart';
 import 'settings_screen.dart';
 import 'organizations_screen.dart';
 
@@ -13,6 +16,57 @@ class gcDashboardScreen extends StatefulWidget {
 }
 
 class _gcDashboardScreenState extends State<gcDashboardScreen> {
+  late Future<List<gcEvent>> _upcomingRsvpEvents;
+
+  @override
+  void initState() {
+    super.initState();
+    _upcomingRsvpEvents = _loadUpcomingRsvpEvents();
+  }
+
+  Future<List<gcEvent>> _loadUpcomingRsvpEvents() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return [];
+    }
+
+    try {
+      // Get all events from storage
+      final allEventsMap = await gcEventStorage.loadEvents();
+      final allEvents = allEventsMap.values.expand((list) => list).toList();
+
+      // Get all RSVPs for this user
+      final rsvpsSnapshot = await FirebaseFirestore.instance
+          .collection('rsvps')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      final rsvpEventIds = {
+        for (final doc in rsvpsSnapshot.docs) doc['eventId'] as String
+      };
+
+      // Filter events to only those the user has RSVPd to
+      final rsvpdEvents = allEvents
+          .where((event) => rsvpEventIds.contains(event.id))
+          .toList();
+
+      // Filter to only future events (normalize dates to UTC for consistent comparison)
+      final now = DateTime.now();
+      final todayUtc = DateTime.utc(now.year, now.month, now.day);
+      final upcomingEvents = rsvpdEvents
+          .where((event) => event.date.isAfter(todayUtc) || event.date.isAtSameMomentAs(todayUtc))
+          .toList();
+
+      // Sort by date (soonest first)
+      upcomingEvents.sort((a, b) => a.date.compareTo(b.date));
+
+      return upcomingEvents.take(5).toList(); // Show only top 5
+    } catch (e) {
+      print('Error loading upcoming RSVP events: $e');
+      return [];
+    }
+  }
+
   // Sign Out Function
   void _signOut() {
     FirebaseAuth.instance.signOut();
@@ -113,9 +167,9 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  SizedBox(height: 125),
-                  Padding(
+                children: [
+                  const SizedBox(height: 125),
+                  const Padding(
                     padding: EdgeInsets.only(right: 10.0),
                     child: Text(
                       'Upcoming Events',
@@ -125,70 +179,93 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 25),
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.0),
-                    child: Text(
-                      'Chi Phi is hosting a philanthropy event on Saturday at 3 PM.\nRSVP: Yes/No',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
+                  const SizedBox(height: 25),
+                  Expanded(
+                    child: FutureBuilder<List<gcEvent>>(
+                      future: _upcomingRsvpEvents,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.only(left: 10.0, right: 10),
+                            child: Text(
+                              'No upcoming RSVP\'d events.\nHead to the calendar to RSVP to events!',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        }
+
+                        final events = snapshot.data!;
+                        return ListView.separated(
+                          itemCount: events.length,
+                          separatorBuilder: (context, index) => const Divider(
+                            thickness: 3,
+                            endIndent: 50,
+                            color: Colors.blueAccent,
+                            height: 50,
+                          ),
+                          itemBuilder: (context, index) {
+                            final event = events[index];
+                            final daysUntil = event.date.difference(DateTime.now()).inDays;
+                            String daysLabel;
+                            if (daysUntil == 0) {
+                              daysLabel = 'Today';
+                            } else if (daysUntil == 1) {
+                              daysLabel = 'Tomorrow';
+                            } else {
+                              daysLabel = 'In $daysUntil days';
+                            }
+
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 10.0, right: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    event.title,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (event.startTime != null)
+                                    Text(
+                                      'Time: ${event.startTime!.format(context)}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  if (event.location != null && event.location!.isNotEmpty)
+                                    Text(
+                                      'Location: ${event.location}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  Text(
+                                    daysLabel,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: daysUntil == 0 ? Colors.red : Colors.orange,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
-                  ),
-                  Divider(
-                    thickness: 3,
-                    endIndent: 50,
-                    color: Colors.blueAccent,
-                    height: 50,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.0, right: 10),
-                    child: Text(
-                      'From Jim: Don\'t forget about the meeting tomorrow at 5 PM in the student center.',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    thickness: 3,
-                    endIndent: 50,
-                    color: Colors.blueAccent,
-                    height: 50,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.0, right: 10),
-                    child: Text(
-                      'Kappa Sigma has a social event next Friday at 7 PM. Location: TBA.',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    thickness: 3,
-                    endIndent: 50,
-                    color: Colors.blueAccent,
-                    height: 50,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.0, right: 10),
-                    child: Text(
-                      'Delta Phi Epsilon is organizing a CH-115 study session this Thursday at 6 PM in the library. \nRSVP: Yes/No',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    thickness: 3,
-                    endIndent: 50,
-                    color: Colors.blueAccent,
-                    height: 50,
                   ),
                 ],
               ),

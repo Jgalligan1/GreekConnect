@@ -46,10 +46,11 @@ class _gcNotificationsScreenState extends State<gcNotificationsScreen> {
           .where((event) => rsvpEventIds.contains(event.id))
           .toList();
 
-      // Filter to only future events
+      // Filter to only future events (normalize dates to UTC for consistent comparison)
       final now = DateTime.now();
+      final todayUtc = DateTime.utc(now.year, now.month, now.day);
       final upcomingEvents = rsvpdEvents
-          .where((event) => event.date.isAfter(DateTime(now.year, now.month, now.day)))
+          .where((event) => event.date.isAfter(todayUtc) || event.date.isAtSameMomentAs(todayUtc))
           .toList();
 
       // Sort by date (soonest first)
