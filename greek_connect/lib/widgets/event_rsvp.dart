@@ -83,6 +83,42 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
     }
   }
 
+  Future<void> _cancelRsvp() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+
+    // Capture states synchronously to avoid using BuildContext across async gaps.
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('You must be signed in')),
+      );
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    try {
+      final docId = '${widget.event.id}_${user.uid}';
+      final docRef = FirebaseFirestore.instance.collection('rsvps').doc(docId);
+      await docRef.delete();
+
+      if (!mounted) return;
+      setState(() => _alreadyRsvpd = false);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('RSVP cancelled')),
+      );
+      setState(() => _isSaving = false);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to cancel RSVP: $e')),
+      );
+      setState(() => _isSaving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -188,15 +224,33 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
           if (_alreadyRsvpd == null)
             const Center(child: CircularProgressIndicator())
           else if (_alreadyRsvpd == true)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text(
-                  "You have already RSVP'd to this event",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      "You have already RSVP'd to this event",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 ),
-              ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  onPressed: _isSaving ? null : () => _cancelRsvp(),
+                  child: _isSaving
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Un-RSVP', style: TextStyle(color: Colors.white)),
+                ),
+              ],
             )
           else
             ElevatedButton(
