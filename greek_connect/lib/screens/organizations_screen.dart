@@ -7,11 +7,11 @@ class gcOrganizationsScreen extends StatelessWidget {
   final List<String> myOrganizations = const ['Chi Phi', 'FSL Office'];
 
   final List<String> otherOrganizations = const [
-    'OTHER ORGANIZATIONS',
-    'OTHER ORGANIZATIONS',
-    'OTHER ORGANIZATIONS',
-    'OTHER ORGANIZATIONS',
-    'OTHER ORGANIZATIONS',
+    'Alphi Phi Omega',
+    'Phi Sigma Kappa',
+    'Chi Psi',
+    'Theta Phi Alpha',
+    'Alpha Phi',
   ];
 
   @override
