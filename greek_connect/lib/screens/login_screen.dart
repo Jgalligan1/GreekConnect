@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:greek_connect/widgets/text_field.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class gcLoginScreen extends StatefulWidget {
   final Function()? onTap;
@@ -33,6 +34,36 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
       if (mounted) Navigator.pop(context); // Remove loading circle
 
       if (mounted) displayMessage(e.code);
+    }
+  }
+
+  Future<void> _launchOktaSignIn() async {
+    // Replace these with the values from your Okta app configuration
+    const String oktaDomain = 'sio.oktapreview.com';
+    const String clientId = '0oauyr79rxi4uMBDf1d7';
+    const String redirectUri =
+        'http://localhost:8080/authorization-code/callback';
+
+    final Uri authUri = Uri(
+      scheme: 'https',
+      host: oktaDomain,
+      path: '/oauth2/default/v1/authorize',
+      queryParameters: {
+        'client_id': clientId,
+        'response_type': 'code',
+        'scope': 'openid profile email',
+        'redirect_uri': redirectUri,
+        'state': 'state',
+        'nonce': 'nonce',
+      },
+    );
+
+    try {
+      if (!await launchUrl(authUri, mode: LaunchMode.externalApplication)) {
+        displayMessage('Could not open browser for Okta sign-in.');
+      }
+    } catch (e) {
+      displayMessage('Failed to open sign-in: $e');
     }
   }
 
@@ -81,6 +112,14 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
                   signIn();
                 },
                 child: const Text('Login'),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  _launchOktaSignIn();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                child: const Text('Login with University'),
               ),
               const SizedBox(height: 16),
               Row(
