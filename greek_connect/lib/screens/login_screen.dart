@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:greek_connect/widgets/text_field.dart';
+import 'package:greek_connect/services/okta_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class gcLoginScreen extends StatefulWidget {
@@ -38,23 +39,23 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
   }
 
   Future<void> _launchOktaSignIn() async {
-    // Replace these with the values from your Okta app configuration
-    const String oktaDomain = 'sio.oktapreview.com';
-    const String clientId = '0oauyr79rxi4uMBDf1d7';
-    const String redirectUri =
-        'http://localhost:8080/authorization-code/callback';
+    // Generate PKCE parameters
+    final pkce = OktaAuthService.generatePKCE();
+    await OktaAuthService.storeCodeVerifier(pkce['code_verifier']!);
 
     final Uri authUri = Uri(
       scheme: 'https',
-      host: oktaDomain,
+      host: OktaAuthService.oktaDomain,
       path: '/oauth2/default/v1/authorize',
       queryParameters: {
-        'client_id': clientId,
+        'client_id': OktaAuthService.clientId,
         'response_type': 'code',
         'scope': 'openid profile email',
-        'redirect_uri': redirectUri,
+        'redirect_uri': OktaAuthService.redirectUri,
         'state': 'state',
         'nonce': 'nonce',
+        'code_challenge': pkce['code_challenge']!,
+        'code_challenge_method': 'S256',
       },
     );
 
