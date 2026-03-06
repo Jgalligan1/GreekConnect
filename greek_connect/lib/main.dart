@@ -74,7 +74,7 @@ class gcMyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Greek Connect',
+      title: 'Duck Connect',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         primaryColor: Colors.blueAccent,

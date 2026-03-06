@@ -239,7 +239,7 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: const Color(0xFF51539C),
                   ),
                   onPressed: _isSaving ? null : () => _cancelRsvp(),
                   child: _isSaving

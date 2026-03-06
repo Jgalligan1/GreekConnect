@@ -70,7 +70,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load events: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFF51539C),
           ),
         );
       }
@@ -113,7 +113,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to save event'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFF51539C),
         ),
       );
     }
@@ -168,8 +168,9 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Greek Connect Calendar'),
-        backgroundColor: _mode == CalendarMode.rsvp ? Colors.red : null,
+        title: const Text('Duck Connect Calendar'),
+        backgroundColor:
+            _mode == CalendarMode.rsvp ? const Color(0xFF51539C) : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -221,7 +222,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                       onPressed: () => Navigator.pop(context, true),
                       child: const Text(
                         'Clear',
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(color: Color(0xFF51539C)),
                       ),
                     ),
                   ],
@@ -397,7 +398,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                                   ? IconButton(
                                       icon: const Icon(
                                         Icons.delete,
-                                        color: Colors.red,
+                                        color: Color(0xFF51539C),
                                       ),
                                       onPressed: () => _deleteEvent(event),
                                     )

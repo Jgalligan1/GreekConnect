@@ -64,7 +64,7 @@ class gcDefaultFirebaseOptions {
     messagingSenderId: '522669596682',
     projectId: 'greekconnect-b03ba',
     storageBucket: 'greekconnect-b03ba.firebasestorage.app',
-    iosBundleId: 'com.example.greekConnect',
+    iosBundleId: 'com.example.duckConnect',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class gcDefaultFirebaseOptions {
     messagingSenderId: '522669596682',
     projectId: 'greekconnect-b03ba',
     storageBucket: 'greekconnect-b03ba.firebasestorage.app',
-    iosBundleId: 'com.example.greekConnect',
+    iosBundleId: 'com.example.duckConnect',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

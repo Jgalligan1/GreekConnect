@@ -197,7 +197,7 @@ class _gcNotificationsScreenState extends State<gcNotificationsScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: daysUntil == 0
-                                ? Colors.red
+                                ? const Color(0xFF51539C)
                                 : Colors.orange[700],
                           ),
                         ),

@@ -74,7 +74,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade700,
+                      color: const Color(0xFF51539C),
                       borderRadius: BorderRadius.vertical(
                         top: Radius.circular(isPhone ? 16 : 12),
                       ),
@@ -102,16 +102,16 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                         labelText: 'Title',
                         border: const OutlineInputBorder(),
                         enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
                         ),
                         errorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
@@ -135,16 +135,16 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                         labelText: 'Description',
                         border: const OutlineInputBorder(),
                         enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
                         ),
                         errorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
@@ -165,16 +165,16 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                         labelText: 'Location',
                         border: const OutlineInputBorder(),
                         enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
                         ),
                         errorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red),
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,

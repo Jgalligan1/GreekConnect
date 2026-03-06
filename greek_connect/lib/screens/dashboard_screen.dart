@@ -256,7 +256,9 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
-                                      color: daysUntil == 0 ? Colors.red : Colors.orange,
+                                      color: daysUntil == 0
+                                          ? const Color(0xFF51539C)
+                                          : Colors.orange,
                                     ),
                                   ),
                                 ],
