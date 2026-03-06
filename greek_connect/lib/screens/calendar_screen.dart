@@ -260,11 +260,11 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                   calendarStyle: CalendarStyle(
                     cellPadding: const EdgeInsets.only(top: 2, left: 2),
                     todayDecoration: BoxDecoration(
-                      color: Colors.deepPurple.withOpacity(0.5),
+                      color: const Color(0xFF801C0D).withOpacity(0.5),
                       shape: BoxShape.circle,
                     ),
                     selectedDecoration: const BoxDecoration(
-                      color: Colors.deepPurple,
+                      color: Color(0xFF801C0D),
                       shape: BoxShape.circle,
                     ),
                     markerDecoration: const BoxDecoration(
@@ -301,7 +301,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue,
+                            color: const Color(0xFF801C0D),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

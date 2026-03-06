@@ -133,7 +133,7 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
                     child: const Text(
                       'Register now',
                       style: TextStyle(
-                        color: Colors.blue,
+                        color: Color(0xFF801C0D),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

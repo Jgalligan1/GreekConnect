@@ -129,7 +129,7 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue,
+                          color: Color(0xFF801C0D),
                         ),
                       ),
                     ),
@@ -152,7 +152,7 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue,
+                          color: Color(0xFF801C0D),
                         ),
                       ),
                     ),
@@ -208,7 +208,7 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                           separatorBuilder: (context, index) => const Divider(
                             thickness: 3,
                             endIndent: 50,
-                            color: Colors.blueAccent,
+                            color: Color(0xFF801C0D),
                             height: 50,
                           ),
                           itemBuilder: (context, index) {

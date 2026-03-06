@@ -80,7 +80,7 @@ class gcMyApp extends StatelessWidget {
         primaryColor: Colors.blueAccent,
 
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.blueAccent,
+          backgroundColor: Color(0xFF801C0D),
           foregroundColor: Colors.white,
           elevation: 2,
           centerTitle: true,
