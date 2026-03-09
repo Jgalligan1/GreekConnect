@@ -117,7 +117,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   const Icon(
                     Icons.account_circle,
                     size: 80,
-                    color: Colors.blueAccent,
+                    color: Color(0xFF801C0D),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -167,7 +167,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     onPressed: _completeSetup,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: Color(0xFF801C0D),
                       foregroundColor: Colors.white,
                     ),
                     child: const Text(

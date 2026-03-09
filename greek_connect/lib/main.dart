@@ -6,6 +6,7 @@ import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'package:greek_connect/services/okta_auth_service.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/profile_setup_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -196,6 +197,14 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
               case 2:
                 page = gcNotificationsScreen();
                 break;
+              case 3:
+                // For testing only - access profile setup
+                final user = snapshot.data;
+                page = ProfileSetupScreen(
+                  email: user?.email ?? '',
+                  displayName: user?.displayName,
+                );
+                break;
               default:
                 page = gcDashboardScreen();
             }
@@ -203,6 +212,20 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
             return Scaffold(
               body: page,
               bottomNavigationBar: BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
+                backgroundColor:
+                    Theme.of(context).appBarTheme.backgroundColor ??
+                    const Color(0xFF801C0D),
+                selectedItemColor:
+                    Theme.of(context).appBarTheme.foregroundColor ??
+                    Colors.white,
+                unselectedItemColor: Colors.white70,
+                selectedIconTheme: IconThemeData(
+                  color:
+                      Theme.of(context).appBarTheme.foregroundColor ??
+                      Colors.white,
+                ),
+                unselectedIconTheme: const IconThemeData(color: Colors.white70),
                 currentIndex: selectedIndex,
                 onTap: (index) {
                   setState(() {
@@ -221,6 +244,10 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
                   BottomNavigationBarItem(
                     icon: Icon(Icons.notifications),
                     label: 'Notifications',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.settings),
+                    label: 'Profile',
                   ),
                 ],
               ),

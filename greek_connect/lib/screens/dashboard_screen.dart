@@ -42,7 +42,7 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
           .get();
 
       final rsvpEventIds = {
-        for (final doc in rsvpsSnapshot.docs) doc['eventId'] as String
+        for (final doc in rsvpsSnapshot.docs) doc['eventId'] as String,
       };
 
       // Filter events to only those the user has RSVPd to
@@ -54,7 +54,11 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
       final now = DateTime.now();
       final todayUtc = DateTime.utc(now.year, now.month, now.day);
       final upcomingEvents = rsvpdEvents
-          .where((event) => event.date.isAfter(todayUtc) || event.date.isAtSameMomentAs(todayUtc))
+          .where(
+            (event) =>
+                event.date.isAfter(todayUtc) ||
+                event.date.isAtSameMomentAs(todayUtc),
+          )
           .toList();
 
       // Sort by date (soonest first)
@@ -93,7 +97,7 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                 children: [
                   const SizedBox(height: 50),
                   Text(
-                    'Hello ${FirebaseAuth.instance.currentUser!.email!}, Welcome to the Dashboard!',
+                    'Hello ${FirebaseAuth.instance.currentUser!.displayName!}, Welcome to the Dashboard!',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -184,11 +188,16 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                     child: FutureBuilder<List<gcEvent>>(
                       future: _upcomingRsvpEvents,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
-                        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                        if (snapshot.hasError ||
+                            !snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.only(left: 10.0, right: 10),
                             child: Text(
@@ -213,7 +222,9 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                           ),
                           itemBuilder: (context, index) {
                             final event = events[index];
-                            final daysUntil = event.date.difference(DateTime.now()).inDays;
+                            final daysUntil = event.date
+                                .difference(DateTime.now())
+                                .inDays;
                             String daysLabel;
                             if (daysUntil == 0) {
                               daysLabel = 'Today';
@@ -224,7 +235,10 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                             }
 
                             return Padding(
-                              padding: const EdgeInsets.only(left: 10.0, right: 10),
+                              padding: const EdgeInsets.only(
+                                left: 10.0,
+                                right: 10,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -243,7 +257,8 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                                         fontWeight: FontWeight.w400,
                                       ),
                                     ),
-                                  if (event.location != null && event.location!.isNotEmpty)
+                                  if (event.location != null &&
+                                      event.location!.isNotEmpty)
                                     Text(
                                       'Location: ${event.location}',
                                       style: const TextStyle(
