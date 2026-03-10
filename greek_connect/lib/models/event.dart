@@ -58,26 +58,58 @@ class gcEvent {
       color: json['color'] as int? ?? 0xFF2196F3,
       location: json['location'] as String?,
       userId: json['userId'] as String?,
-      startTime: json['startTime'] != null
-          ? _parseTimeOfDay(json['startTime'])
-          : null,
-      endTime: json['endTime'] != null
-          ? _parseTimeOfDay(json['endTime'])
-          : null,
+      startTime: _parseTimeOfDay(json['startTime']),
+      endTime: _parseTimeOfDay(json['endTime']),
     );
   }
 
-  // Parse "HH:MM" into TimeOfDay
-  static TimeOfDay _parseTimeOfDay(String? value) {
-    if (value == null) return TimeOfDay(hour: 0, minute: 0);
+  // Parse supported time formats into TimeOfDay.
+  static TimeOfDay? _parseTimeOfDay(dynamic value) {
+    if (value == null) return null;
+
+    final raw = value.toString().trim();
+    if (raw.isEmpty) return null;
 
     try {
-      final parts = value.split(':');
-      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      // 24h formats: HH:MM or HH:MM:SS
+      final parts = raw.split(':');
+      if (parts.length >= 2 &&
+          !raw.toUpperCase().contains('AM') &&
+          !raw.toUpperCase().contains('PM')) {
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+          return TimeOfDay(hour: hour, minute: minute);
+        }
+      }
+
+      // 12h format: h:mm AM/PM
+      final match = RegExp(
+        r'^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$',
+      ).firstMatch(raw);
+      if (match != null) {
+        var hour = int.parse(match.group(1)!);
+        final minute = int.parse(match.group(2)!);
+        final meridiem = match.group(3)!.toUpperCase();
+
+        if (hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+          return null;
+        }
+
+        if (meridiem == 'AM') {
+          hour = hour == 12 ? 0 : hour;
+        } else {
+          hour = hour == 12 ? 12 : hour + 12;
+        }
+
+        return TimeOfDay(hour: hour, minute: minute);
+      }
     } catch (e) {
-      print("Time parse error: $e (value: $value)");
-      return TimeOfDay(hour: 0, minute: 0);
+      print('Time parse error: $e (value: $raw)');
     }
+
+    print('Unsupported time format: $raw');
+    return null;
   }
 
   Color get colorValue => Color(color);

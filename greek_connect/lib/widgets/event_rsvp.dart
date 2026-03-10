@@ -21,7 +21,7 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
     final startTime = widget.event.startTime;
     if (startTime == null) return null;
 
-    final eventDate = widget.event.date.toLocal();
+    final eventDate = widget.event.date;
     return DateTime(
       eventDate.year,
       eventDate.month,

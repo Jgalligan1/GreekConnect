@@ -50,7 +50,7 @@ class gcRsvpReminderSyncService {
           continue;
         }
 
-        final eventDate = event.date.toLocal();
+        final eventDate = event.date;
         final eventStartLocal = DateTime(
           eventDate.year,
           eventDate.month,
