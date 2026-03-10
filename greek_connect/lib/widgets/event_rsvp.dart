@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
+import '../services/local_notification_service.dart';
 
 class EventRsvpModal extends StatefulWidget {
   final gcEvent event;
@@ -15,6 +16,20 @@ class EventRsvpModal extends StatefulWidget {
 class _EventRsvpModalState extends State<EventRsvpModal> {
   bool _isSaving = false;
   bool? _alreadyRsvpd;
+
+  DateTime? _eventStartLocal() {
+    final startTime = widget.event.startTime;
+    if (startTime == null) return null;
+
+    final eventDate = widget.event.date.toLocal();
+    return DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+      startTime.hour,
+      startTime.minute,
+    );
+  }
 
   @override
   void initState() {
@@ -73,6 +88,43 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
+      final eventStart = _eventStartLocal();
+      if (eventStart != null) {
+        final result = await gcLocalNotificationService.instance
+            .scheduleRsvpReminder(
+              eventId: widget.event.id,
+              title: widget.event.title,
+              eventStartLocal: eventStart,
+            );
+
+        if (mounted) {
+          String message;
+          switch (result) {
+            case gcReminderScheduleResult.scheduledExact:
+              message = 'Reminder set for 1 hour before the event.';
+              break;
+            case gcReminderScheduleResult.scheduledInexact:
+              message =
+                  'Reminder set (approximate time due to Android alarm settings).';
+              break;
+            case gcReminderScheduleResult.skippedTooSoon:
+              message =
+                  'Event is less than 1 hour away, so no 1-hour reminder was scheduled.';
+              break;
+            case gcReminderScheduleResult.skippedNoPermission:
+              message =
+                  'Notifications are disabled on this device. Enable app notifications in system settings.';
+              break;
+            case gcReminderScheduleResult.skippedWeb:
+              message =
+                  'Web does not support local device reminders in this app yet.';
+              break;
+          }
+
+          messenger.showSnackBar(SnackBar(content: Text(message)));
+        }
+      }
+
       if (!mounted) return;
       navigator.pop(true);
     } catch (e) {
@@ -104,12 +156,13 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
       final docId = '${widget.event.id}_${user.uid}';
       final docRef = FirebaseFirestore.instance.collection('rsvps').doc(docId);
       await docRef.delete();
+      await gcLocalNotificationService.instance.cancelRsvpReminder(
+        widget.event.id,
+      );
 
       if (!mounted) return;
       setState(() => _alreadyRsvpd = false);
-      messenger.showSnackBar(
-        const SnackBar(content: Text('RSVP cancelled')),
-      );
+      messenger.showSnackBar(const SnackBar(content: Text('RSVP cancelled')));
       setState(() => _isSaving = false);
     } catch (e) {
       messenger.showSnackBar(
@@ -233,7 +286,10 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
                     child: Text(
                       "You have already RSVP'd to this event",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -248,7 +304,10 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
                           width: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Un-RSVP', style: TextStyle(color: Colors.white)),
+                      : const Text(
+                          'Un-RSVP',
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ],
             )

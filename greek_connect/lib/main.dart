@@ -1,18 +1,23 @@
 // lib/main.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'package:greek_connect/services/okta_auth_service.dart';
+import 'package:greek_connect/services/rsvp_reminder_sync_service.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'dart:html' as html;
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:greek_connect/services/local_notification_service.dart';
+import 'package:greek_connect/services/web_location_stub.dart'
+    if (dart.library.html) 'package:greek_connect/services/web_location_web.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +25,10 @@ Future<void> main() async {
     options: gcDefaultFirebaseOptions.currentPlatform,
   );
   await initializeDateFormatting();
+
+  if (!kIsWeb) {
+    await gcLocalNotificationService.instance.initialize();
+  }
 
   // Check for OAuth callback on web
   await _handleOAuthCallback();
@@ -39,7 +48,10 @@ String _generateDeterministicPassword(String email) {
 
 Future<void> _handleOAuthCallback() async {
   try {
-    final uri = Uri.parse(html.window.location.href);
+    final href = gcCurrentBrowserHref();
+    if (href == null) return;
+
+    final uri = Uri.parse(href);
     final code = uri.queryParameters['code'];
 
     if (code != null) {
@@ -122,7 +134,7 @@ Future<void> _handleOAuthCallback() async {
         }
 
         // Clean up URL by removing query params
-        html.window.history.replaceState(null, '', '/');
+        gcReplaceBrowserPath('/');
         print('=== OAuth Callback Completed ===');
       } else {
         print('✗ Failed to exchange authorization code for tokens');
@@ -173,6 +185,31 @@ class gcMyHomePage extends StatefulWidget {
 
 class _gcMyHomePageState extends State<gcMyHomePage> {
   int selectedIndex = 0;
+  StreamSubscription<User?>? _authSubscription;
+  String? _syncedReminderUserId;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user == null) {
+        _syncedReminderUserId = null;
+        return;
+      }
+
+      if (_syncedReminderUserId == user.uid) return;
+
+      _syncedReminderUserId = user.uid;
+      gcRsvpReminderSyncService.syncForUser(user.uid);
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
