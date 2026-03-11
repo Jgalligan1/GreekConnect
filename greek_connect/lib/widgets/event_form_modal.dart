@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
+import '../services/user_service.dart';
 
 class gcEventFormModal extends StatefulWidget {
   final DateTime selectedDate;
@@ -25,6 +26,10 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
 
+  // Organization state
+  String? _userOrganization;
+  bool _loadingOrg = true;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +40,33 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
       _location = initial.location ?? '';
       _startTime = initial.startTime;
       _endTime = initial.endTime;
+      // Preserve existing org when editing
+      _userOrganization = initial.organization;
+    }
+    _loadUserOrganization();
+  }
+
+  Future<void> _loadUserOrganization() async {
+    // If editing an existing event that already has an org, no need to re-fetch
+    if (_userOrganization != null) {
+      if (mounted) setState(() => _loadingOrg = false);
+      return;
+    }
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final profile = await UserService().getUserProfile(user.uid);
+        if (mounted) {
+          setState(() {
+            _userOrganization = profile?.organization;
+            _loadingOrg = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _loadingOrg = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingOrg = false);
     }
   }
 
@@ -50,6 +82,55 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (context, scrollController) {
+        // Show spinner while fetching the user's organization
+        if (_loadingOrg) {
+          return const Material(
+            color: Colors.white,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Block the form if the user has no organization
+        if (_userOrganization == null || _userOrganization!.isEmpty) {
+          return Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(isPhone ? 16 : 12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.group_off_sharp,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No Organization Found',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'You must belong to an organization before you can create or edit events. Please update your profile first.',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         return Material(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(
@@ -105,13 +186,19 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                           borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
                         ),
                         errorBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
@@ -138,13 +225,19 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                           borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
                         ),
                         errorBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
@@ -168,13 +261,19 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                           borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
                         ),
                         errorBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Color(0xFF51539C)),
                         ),
                         focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 20,
@@ -188,6 +287,32 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                   ),
 
                   const SizedBox(height: 12),
+
+                  // ----- Hosted By (read-only) -----
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Hosted By',
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
+                        ),
+                        prefixIcon: Icon(
+                          Icons.groups,
+                          color: Color(0xFF51539C),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
+                      ),
+                      child: Text(
+                        _userOrganization!,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
 
                   // ----- Start Time -----
                   Row(
@@ -267,8 +392,10 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                               startTime: _startTime,
                               endTime: _endTime,
                               date: widget.selectedDate,
-                              userId: existing?.userId ??
+                              userId:
+                                  existing?.userId ??
                                   FirebaseAuth.instance.currentUser?.uid,
+                              organization: _userOrganization,
                               color: existing?.color,
                             );
                             Navigator.pop(context, newEvent);

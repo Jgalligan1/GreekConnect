@@ -249,6 +249,37 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                                  if (event.organization != null &&
+                                      event.organization!.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 2,
+                                        bottom: 2,
+                                      ),
+                                      child: Chip(
+                                        label: Text(
+                                          event.organization!,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        avatar: const Icon(
+                                          Icons.groups,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                        backgroundColor: const Color(
+                                          0xFF51539C,
+                                        ),
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    ),
                                   if (event.startTime != null)
                                     Text(
                                       'Time: ${event.startTime!.format(context)}',

@@ -10,6 +10,7 @@ class gcEvent {
   final int color;
   final String? location;
   final String? userId;
+  final String? organization;
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
 
@@ -21,6 +22,7 @@ class gcEvent {
     int? color,
     this.location,
     this.userId,
+    this.organization,
     this.startTime,
     this.endTime,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -36,6 +38,7 @@ class gcEvent {
       'color': color,
       'location': location,
       'userId': userId,
+      'organization': organization,
       'startTime': startTime != null ? _formatTime(startTime!) : null,
       'endTime': endTime != null ? _formatTime(endTime!) : null,
     };
@@ -58,6 +61,7 @@ class gcEvent {
       color: json['color'] as int? ?? 0xFF2196F3,
       location: json['location'] as String?,
       userId: json['userId'] as String?,
+      organization: json['organization'] as String?,
       startTime: json['startTime'] != null
           ? _parseTimeOfDay(json['startTime'])
           : null,
@@ -90,6 +94,7 @@ class gcEvent {
     int? color,
     String? location,
     String? userId,
+    String? organization,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
   }) {
@@ -101,6 +106,7 @@ class gcEvent {
       color: color ?? this.color,
       location: location ?? this.location,
       userId: userId ?? this.userId,
+      organization: organization ?? this.organization,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
     );

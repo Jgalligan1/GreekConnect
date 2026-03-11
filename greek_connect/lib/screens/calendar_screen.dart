@@ -389,6 +389,43 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  if (event.organization != null &&
+                                      event.organization!.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 2,
+                                        bottom: 4,
+                                      ),
+                                      child: Wrap(
+                                        children: [
+                                          Chip(
+                                            label: Text(
+                                              event.organization!,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            avatar: const Icon(
+                                              Icons.groups,
+                                              size: 14,
+                                              color: Colors.white,
+                                            ),
+                                            backgroundColor: const Color(
+                                              0xFF51539C,
+                                            ),
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   if (event.description != null &&
                                       event.description!.isNotEmpty)
                                     Text(event.description!),
