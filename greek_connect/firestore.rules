@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ───────────────────────────────────────────────────────
+
+    // Returns true if the requesting user is authenticated.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Returns true if the requesting user is the owner of the document uid.
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Reads the caller's user document and checks the isAdmin flag.
+    // NOTE: This incurs one extra read per write operation on guarded collections.
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // ── users collection ───────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Any signed-in user can read their own profile.
+      allow read: if isOwner(uid);
+
+      // A user can create their own profile on sign-up.
+      allow create: if isOwner(uid);
+
+      // A user can update their own profile BUT cannot promote themselves to admin.
+      // Only a current admin can flip the isAdmin field on any document.
+      allow update: if isOwner(uid) &&
+        (
+          // Non-admin path: they are not changing isAdmin at all.
+          !('isAdmin' in request.resource.data) ||
+          request.resource.data.isAdmin == resource.data.isAdmin
+        );
+
+      // Allow an admin to update any user document (including toggling isAdmin).
+      allow update: if isAdmin();
+
+      // Only admins may delete user profiles.
+      allow delete: if isAdmin();
+    }
+
+    // ── events collection ──────────────────────────────────────────────────────
+    match /events/{eventId} {
+      // Anyone signed in can read events (needed for RSVP mode).
+      allow read: if isSignedIn();
+
+      // Only admins may create, update, or delete events.
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── rsvps collection ───────────────────────────────────────────────────────
+    match /rsvps/{rsvpId} {
+      // A user can read their own RSVPs.
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // A signed-in user can create/update/delete their own RSVP.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+  }
+}

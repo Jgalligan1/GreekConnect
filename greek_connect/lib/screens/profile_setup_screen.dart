@@ -17,6 +17,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final UserService _userService = UserService();
   String? _selectedOrganization;
   bool _isLoading = false;
+  bool _isAdmin = false;
 
   // List of available organizations (Greek life organizations)
   final List<String> _organizations = [
@@ -69,6 +70,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         organization: _selectedOrganization,
         createdAt: DateTime.now(),
         lastLoginAt: DateTime.now(),
+        isAdmin: _isAdmin,
       );
 
       final success = await _userService.createUserProfile(profile);
@@ -160,6 +162,41 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           });
                         },
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // ── Admin toggle (for testing only) ──────────────────────
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _isAdmin
+                            ? const Color(0xFF801C0D)
+                            : Colors.grey.shade300,
+                        width: _isAdmin ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      color: _isAdmin
+                          ? const Color(0xFF801C0D).withOpacity(0.06)
+                          : null,
+                    ),
+                    child: SwitchListTile(
+                      title: const Text(
+                        'Grant Admin Privileges',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: const Text(
+                        'Testing only — allows creating & editing events',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      secondary: Icon(
+                        Icons.admin_panel_settings,
+                        color: _isAdmin ? const Color(0xFF801C0D) : Colors.grey,
+                      ),
+                      value: _isAdmin,
+                      activeColor: const Color(0xFF801C0D),
+                      onChanged: (value) {
+                        setState(() => _isAdmin = value);
+                      },
                     ),
                   ),
                   const SizedBox(height: 32),

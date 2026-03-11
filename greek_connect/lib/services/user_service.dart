@@ -81,4 +81,31 @@ class UserService {
       return false;
     }
   }
+
+  // Update admin status
+  Future<bool> updateAdminStatus(String uid, bool isAdmin) async {
+    try {
+      await _firestore.collection(_usersCollection).doc(uid).update({
+        'isAdmin': isAdmin,
+      });
+      return true;
+    } catch (e) {
+      print('Error updating admin status: $e');
+      return false;
+    }
+  }
+
+  // Check if user is admin
+  Future<bool> isUserAdmin(String uid) async {
+    try {
+      final doc = await _firestore.collection(_usersCollection).doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        return doc.data()!['isAdmin'] as bool? ?? false;
+      }
+      return false;
+    } catch (e) {
+      print('Error checking admin status: $e');
+      return false;
+    }
+  }
 }
