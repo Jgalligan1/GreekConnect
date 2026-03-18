@@ -37,11 +37,11 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
     _loadEvents();
   }
 
-  // @override
-  // void dispose() {
-  //   _selectedEvents.dispose();
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    _selectedEvents.dispose();
+    super.dispose();
+  }
 
   // Sign Out Function
   void _signOut() {
@@ -134,6 +134,70 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
     }
 
     await gcEventStorage.removeEvent(normalizedDate, event);
+  }
+
+  // Show the event form modal and return the submitted event (or null).
+  Future<gcEvent?> _showEventFormModal(
+    DateTime date, {
+    gcEvent? initialEvent,
+  }) {
+    return showModalBottomSheet<gcEvent>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth =
+              constraints.maxWidth < 700 ? constraints.maxWidth : 640.0;
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 16,
+                    offset: Offset(0, -6),
+                  ),
+                ],
+              ),
+              height: MediaQuery.of(context).size.height * 0.8,
+              child: gcEventFormModal(
+                selectedDate: date,
+                initialEvent: initialEvent,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Handles a tap on an event card depending on the current mode.
+  Future<void> _onEventTap(gcEvent event) async {
+    if (_mode == CalendarMode.edit) {
+      final updated =
+          await _showEventFormModal(event.date, initialEvent: event);
+      if (updated != null) await _editEvent(event, updated);
+    } else if (_mode == CalendarMode.rsvp) {
+      final didRsvp = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => EventRsvpModal(event: event),
+      );
+      if (didRsvp == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('RSVP saved')),
+        );
+      }
+    }
   }
 
   // Edit event
@@ -325,168 +389,12 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                 Expanded(
                   child: ValueListenableBuilder<List<gcEvent>>(
                     valueListenable: _selectedEvents,
-                    builder: (context, events, _) {
-                      if (events.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.event_busy,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No events for this day',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        itemCount: events.length,
-                        padding: const EdgeInsets.all(8),
-                        itemBuilder: (context, index) {
-                          final event = events[index];
-                          return Card(
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: event.colorValue,
-                                child: const Icon(
-                                  Icons.event,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                event.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (event.description != null &&
-                                      event.description!.isNotEmpty)
-                                    Text(event.description!),
-                                  if (event.location != null &&
-                                      event.location!.isNotEmpty)
-                                    Text("📍 ${event.location}"),
-                                  if (event.startTime != null &&
-                                      event.endTime != null)
-                                    Text(
-                                      "⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}",
-                                    )
-                                  else if (event.startTime != null)
-                                    Text(
-                                      "⏰ Starts at: ${event.startTime!.format(context)}",
-                                    )
-                                  else if (event.endTime != null)
-                                    Text(
-                                      "⏰ Ends at: ${event.endTime!.format(context)}",
-                                    ),
-                                ],
-                              ),
-                              trailing: _mode == CalendarMode.edit
-                                  ? IconButton(
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Color(0xFF51539C),
-                                      ),
-                                      onPressed: () => _deleteEvent(event),
-                                    )
-                                  : null,
-                              onTap: _mode == CalendarMode.edit
-                                  ? () async {
-                                        final updated =
-                                          await showModalBottomSheet<gcEvent>(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) => LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final maxWidth =
-                                                constraints.maxWidth < 700
-                                                    ? constraints.maxWidth
-                                                    : 640.0;
-                                            return Align(
-                                              alignment: Alignment.bottomCenter,
-                                              child: Container(
-                                                margin:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 16,
-                                                  vertical: 12,
-                                                ),
-                                                constraints: BoxConstraints(
-                                                  maxWidth: maxWidth,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(context)
-                                                      .scaffoldBackgroundColor,
-                                                  borderRadius:
-                                                      const BorderRadius
-                                                          .vertical(
-                                                    top: Radius.circular(16),
-                                                  ),
-                                                  boxShadow: const [
-                                                    BoxShadow(
-                                                      color: Colors.black26,
-                                                      blurRadius: 16,
-                                                      offset: Offset(0, -6),
-                                                    ),
-                                                  ],
-                                                ),
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.8,
-                                                child: gcEventFormModal(
-                                                  selectedDate: event.date,
-                                                  initialEvent: event,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      );
-
-                                      if (updated != null) {
-                                        await _editEvent(event, updated);
-                                      }
-                                    }
-                                  : _mode == CalendarMode.rsvp
-                                      ? () async {
-                                          final didRsvp =
-                                              await showModalBottomSheet<bool>(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            backgroundColor: Colors.transparent,
-                                            builder: (context) =>
-                                                EventRsvpModal(event: event),
-                                          );
-
-                                          if (didRsvp == true && mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text('RSVP saved'),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      : null,
-                            ),
-                          );
-                        },
-                      );
-                    },
+                    builder: (context, events, _) => _CalendarEventList(
+                      events: events,
+                      mode: _mode,
+                      onDelete: _deleteEvent,
+                      onEventTap: _onEventTap,
+                    ),
                   ),
                 ),
               ],
@@ -495,52 +403,93 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
           ? FloatingActionButton(
               onPressed: () async {
                 if (_selectedDay == null) return;
-
-                final newEvent = await showModalBottomSheet<gcEvent>(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => LayoutBuilder(
-                    builder: (context, constraints) {
-                      final maxWidth = constraints.maxWidth < 700
-                          ? constraints.maxWidth
-                          : 640.0;
-                      return Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          constraints: BoxConstraints(maxWidth: maxWidth),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(16),
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 16,
-                                offset: Offset(0, -6),
-                              ),
-                            ],
-                          ),
-                          height: MediaQuery.of(context).size.height * 0.8,
-                          child: gcEventFormModal(selectedDate: _selectedDay!),
-                        ),
-                      );
-                    },
-                  ),
-                );
-
-                if (newEvent != null) {
-                  await _addEvent(newEvent);
-                }
+                final newEvent = await _showEventFormModal(_selectedDay!);
+                if (newEvent != null) await _addEvent(newEvent);
               },
               child: const Icon(Icons.add),
             )
           : null,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Private event list widget
+// ---------------------------------------------------------------------------
+
+class _CalendarEventList extends StatelessWidget {
+  final List<gcEvent> events;
+  final CalendarMode mode;
+  final void Function(gcEvent) onDelete;
+  final void Function(gcEvent) onEventTap;
+
+  const _CalendarEventList({
+    required this.events,
+    required this.mode,
+    required this.onDelete,
+    required this.onEventTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No events for this day',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: events.length,
+      padding: const EdgeInsets.all(8),
+      itemBuilder: (context, index) {
+        final event = events[index];
+        return Card(
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: event.colorValue,
+              child: const Icon(Icons.event, color: Colors.white, size: 20),
+            ),
+            title: Text(
+              event.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (event.description != null && event.description!.isNotEmpty)
+                  Text(event.description!),
+                if (event.location != null && event.location!.isNotEmpty)
+                  Text('📍 ${event.location}'),
+                if (event.startTime != null && event.endTime != null)
+                  Text(
+                    '⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}',
+                  )
+                else if (event.startTime != null)
+                  Text('⏰ Starts at: ${event.startTime!.format(context)}')
+                else if (event.endTime != null)
+                  Text('⏰ Ends at: ${event.endTime!.format(context)}'),
+              ],
+            ),
+            trailing: mode == CalendarMode.edit
+                ? IconButton(
+                    icon: const Icon(Icons.delete, color: Color(0xFF51539C)),
+                    onPressed: () => onDelete(event),
+                  )
+                : null,
+            onTap: () => onEventTap(event),
+          ),
+        );
+      },
     );
   }
 }

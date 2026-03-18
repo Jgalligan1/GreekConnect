@@ -81,4 +81,33 @@ class UserService {
       return false;
     }
   }
+
+  // Load notification preferences (returns defaults for missing keys)
+  Future<Map<String, bool>> getNotificationPreferences(String uid) async {
+    try {
+      final doc = await _firestore.collection(_usersCollection).doc(uid).get();
+      final raw =
+          doc.data()?['notificationPreferences'] as Map<String, dynamic>?;
+      if (raw == null) return {};
+      return raw.map((k, v) => MapEntry(k, v as bool));
+    } catch (e) {
+      print('Error loading notification preferences: $e');
+      return {};
+    }
+  }
+
+  // Persist notification preferences (merged so other user fields are untouched)
+  Future<void> saveNotificationPreferences(
+    String uid,
+    Map<String, bool> prefs,
+  ) async {
+    try {
+      await _firestore.collection(_usersCollection).doc(uid).set(
+        {'notificationPreferences': prefs},
+        SetOptions(merge: true),
+      );
+    } catch (e) {
+      print('Error saving notification preferences: $e');
+    }
+  }
 }

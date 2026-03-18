@@ -38,6 +38,48 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
     }
   }
 
+  // Builds a consistently styled text form field.
+  Widget _buildTextField({
+    required String label,
+    required String initialValue,
+    bool isRequired = false,
+    int? maxLines = 1,
+    required FormFieldSetter<String> onSaved,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextFormField(
+        style: const TextStyle(fontSize: 18),
+        maxLines: maxLines,
+        initialValue: initialValue,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF51539C)),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+          ),
+          errorBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF51539C)),
+          ),
+          focusedErrorBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 20,
+            horizontal: 12,
+          ),
+        ),
+        validator: isRequired
+            ? (v) => (v == null || v.isEmpty) ? 'Required' : null
+            : null,
+        onSaved: onSaved,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -93,98 +135,27 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                   const SizedBox(height: 12),
 
                   // ----- Title -----
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: TextFormField(
-                      style: const TextStyle(fontSize: 18),
-                      initialValue: _title,
-                      decoration: InputDecoration(
-                        labelText: 'Title',
-                        border: const OutlineInputBorder(),
-                        enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C)),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-                        ),
-                        errorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C)),
-                        ),
-                        focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 20,
-                          horizontal: 12,
-                        ),
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Required' : null,
-                      onSaved: (v) => _title = v!,
-                    ),
+                  _buildTextField(
+                    label: 'Title',
+                    initialValue: _title,
+                    isRequired: true,
+                    onSaved: (v) => _title = v!,
                   ),
 
                   // ----- Description -----
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: TextFormField(
-                      style: const TextStyle(fontSize: 18),
-                      maxLines: null,
-                      initialValue: _description,
-                      decoration: InputDecoration(
-                        labelText: 'Description',
-                        border: const OutlineInputBorder(),
-                        enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C)),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-                        ),
-                        errorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C)),
-                        ),
-                        focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 20,
-                          horizontal: 12,
-                        ),
-                      ),
-                      onSaved: (v) => _description = v ?? '',
-                    ),
+                  _buildTextField(
+                    label: 'Description',
+                    initialValue: _description,
+                    maxLines: null,
+                    onSaved: (v) => _description = v ?? '',
                   ),
 
                   // ----- Location -----
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: TextFormField(
-                      style: const TextStyle(fontSize: 18),
-                      initialValue: _location,
-                      decoration: InputDecoration(
-                        labelText: 'Location',
-                        border: const OutlineInputBorder(),
-                        enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C)),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-                        ),
-                        errorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C)),
-                        ),
-                        focusedErrorBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 20,
-                          horizontal: 12,
-                        ),
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Required' : null,
-                      onSaved: (v) => _location = v!,
-                    ),
+                  _buildTextField(
+                    label: 'Location',
+                    initialValue: _location,
+                    isRequired: true,
+                    onSaved: (v) => _location = v!,
                   ),
 
                   const SizedBox(height: 12),

@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
-import 'package:greek_connect/services/okta_auth_service.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/profile_setup_screen.dart';
@@ -11,9 +10,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'dart:html' as html;
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
+import 'services/oauth_callback_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,117 +18,9 @@ Future<void> main() async {
     options: gcDefaultFirebaseOptions.currentPlatform,
   );
   await initializeDateFormatting();
-
-  // Check for OAuth callback on web
-  await _handleOAuthCallback();
+  await OAuthCallbackService.handleOAuthCallback();
 
   runApp(const gcMyApp());
-}
-
-// Generate a consistent password for Okta-authenticated users
-// This ensures the same user can sign in repeatedly
-String _generateDeterministicPassword(String email) {
-  const String secret =
-      'greek-connect-okta-auth-v1'; // Keep this secret in production
-  final bytes = utf8.encode(email + secret);
-  final digest = sha256.convert(bytes);
-  return base64Url.encode(digest.bytes);
-}
-
-Future<void> _handleOAuthCallback() async {
-  try {
-    final uri = Uri.parse(html.window.location.href);
-    final code = uri.queryParameters['code'];
-
-    if (code != null) {
-      print('=== OAuth Callback Started ===');
-      print('Authorization code received: ${code.substring(0, 10)}...');
-
-      // Exchange code for tokens
-      final tokens = await OktaAuthService.exchangeCodeForTokens(code);
-
-      if (tokens != null) {
-        print('✓ Tokens received successfully');
-
-        // Get user info from Okta
-        final userInfo = await OktaAuthService.getUserInfo(
-          tokens['access_token'],
-        );
-
-        if (userInfo != null) {
-          print('User info: $userInfo');
-          final email = userInfo['email'] as String?;
-          final name = userInfo['name'] as String?;
-
-          if (email != null) {
-            print('Attempting Firebase authentication for: $email');
-            try {
-              // Use deterministic password (same for each email every time)
-              final String password = _generateDeterministicPassword(email);
-
-              UserCredential? userCredential;
-
-              try {
-                // Try to sign in with existing account
-                userCredential = await FirebaseAuth.instance
-                    .signInWithEmailAndPassword(
-                      email: email,
-                      password: password,
-                    );
-                print('✓ Signed in existing user: $email');
-              } on FirebaseAuthException catch (e) {
-                print(
-                  'Sign-in failed (${e.code}), attempting to create account',
-                );
-                // Try to create account for any sign-in failure
-                // (user-not-found, wrong-password, invalid-credential, etc.)
-                try {
-                  userCredential = await FirebaseAuth.instance
-                      .createUserWithEmailAndPassword(
-                        email: email,
-                        password: password,
-                      );
-                  print('✓ Created new Firebase user: $email');
-
-                  // Update display name
-                  if (name != null && userCredential.user != null) {
-                    await userCredential.user!.updateDisplayName(name);
-                    print('✓ Updated display name to: $name');
-                  }
-                } on FirebaseAuthException catch (createError) {
-                  print(
-                    '✗ Failed to create account: ${createError.code} - ${createError.message}',
-                  );
-                }
-              }
-
-              if (userCredential != null && userCredential.user != null) {
-                print(
-                  '✓ Firebase authentication successful for UID: ${userCredential.user!.uid}',
-                );
-              } else {
-                print('✗ Firebase authentication failed completely');
-              }
-            } catch (e) {
-              print('✗ Firebase sign-in error: $e');
-            }
-          } else {
-            print('✗ No email found in Okta user info');
-          }
-        } else {
-          print('✗ Failed to get user info from Okta');
-        }
-
-        // Clean up URL by removing query params
-        html.window.history.replaceState(null, '', '/');
-        print('=== OAuth Callback Completed ===');
-      } else {
-        print('✗ Failed to exchange authorization code for tokens');
-      }
-    }
-  } catch (e) {
-    print('✗ Error handling OAuth callback: $e');
-  }
 }
 
 class gcMyApp extends StatelessWidget {

@@ -1,8 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event.dart';
-import '../services/event_storage.dart';
+import '../services/rsvp_service.dart';
 
 class gcNotificationsScreen extends StatefulWidget {
   const gcNotificationsScreen({super.key});
@@ -20,48 +18,8 @@ class _gcNotificationsScreenState extends State<gcNotificationsScreen> {
     _upcomingRsvpEvents = _loadUpcomingRsvpEvents();
   }
 
-  Future<List<gcEvent>> _loadUpcomingRsvpEvents() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return [];
-    }
-
-    try {
-      // Get all events from storage
-      final allEventsMap = await gcEventStorage.loadEvents();
-      final allEvents = allEventsMap.values.expand((list) => list).toList();
-
-      // Get all RSVPs for this user
-      final rsvpsSnapshot = await FirebaseFirestore.instance
-          .collection('rsvps')
-          .where('userId', isEqualTo: user.uid)
-          .get();
-
-      final rsvpEventIds = {
-        for (final doc in rsvpsSnapshot.docs) doc['eventId'] as String
-      };
-
-      // Filter events to only those the user has RSVPd to
-      final rsvpdEvents = allEvents
-          .where((event) => rsvpEventIds.contains(event.id))
-          .toList();
-
-      // Filter to only future events (normalize dates to UTC for consistent comparison)
-      final now = DateTime.now();
-      final todayUtc = DateTime.utc(now.year, now.month, now.day);
-      final upcomingEvents = rsvpdEvents
-          .where((event) => event.date.isAfter(todayUtc) || event.date.isAtSameMomentAs(todayUtc))
-          .toList();
-
-      // Sort by date (soonest first)
-      upcomingEvents.sort((a, b) => a.date.compareTo(b.date));
-
-      return upcomingEvents;
-    } catch (e) {
-      print('Error loading upcoming RSVP events: $e');
-      return [];
-    }
-  }
+  Future<List<gcEvent>> _loadUpcomingRsvpEvents() =>
+      RsvpService.getUpcomingRsvpEvents();
 
   @override
   Widget build(BuildContext context) {
