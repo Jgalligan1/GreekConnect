@@ -1,244 +1,232 @@
 @startuml
-set namespaceSeparator ::
+title GreekConnect Class Diagram (Current lib/)
 
-class "greek_connect::auth::auth.dart::AuthPage" {
-  +Widget build()
+skinparam classAttributeIconSize 0
+hide empty methods
+
+package "Core App" {
+  class gcMyApp <<StatelessWidget>>
+  class gcMyHomePage <<StatefulWidget>>
+  class _gcMyHomePageState <<State<gcMyHomePage>>> {
+    - int selectedIndex
+  }
+  class gcDefaultFirebaseOptions <<Config>>
 }
 
-"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "greek_connect::auth::auth.dart::AuthPage"
-
-class "greek_connect::auth::login_or_register.dart::LoginOrRegister" {
-  +State<LoginOrRegister> createState()
+package "Auth" {
+  class gcAuthPage <<StatelessWidget>>
+  class gcLoginOrRegister <<StatefulWidget>>
+  class _gcLoginOrRegisterState <<State<gcLoginOrRegister>>> {
+    - bool showLogin
+  }
+  class gcLoginScreen <<StatefulWidget>>
+  class _gcLoginScreenState <<State<gcLoginScreen>>
+  class gcRegisterScreen <<StatefulWidget>>
+  class _gcRegisterScreenState <<State<gcRegisterScreen>>
 }
 
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::auth::login_or_register.dart::LoginOrRegister"      
+package "Screens" {
+  class gcDashboardScreen <<StatefulWidget>>
+  class _gcDashboardScreenState <<State<gcDashboardScreen>>> {
+    - Future<List<gcEvent>> _upcomingRsvpEvents
+  }
 
-class "greek_connect::auth::login_or_register.dart::_LoginOrRegisterState" {
-  +bool showLogin
-  +void toggleScreens()
-  +Widget build()
+  enum CalendarMode {
+    edit
+    rsvp
+  }
+
+  class gcCalendarScreen <<StatefulWidget>>
+  class _gcCalendarScreenState <<State<gcCalendarScreen>>> {
+    - ValueNotifier<List<gcEvent>> _selectedEvents
+    - Map<DateTime, List<gcEvent>> _events
+    - DateTime _focusedDay
+    - DateTime? _selectedDay
+    - CalendarMode _mode
+    - bool _isLoading
+  }
+
+  class _CalendarEventList <<StatelessWidget>> {
+    - List<gcEvent> events
+    - CalendarMode mode
+  }
+
+  class gcNotificationsScreen <<StatefulWidget>>
+  class _gcNotificationsScreenState <<State<gcNotificationsScreen>>> {
+    - Future<List<gcEvent>> _upcomingRsvpEvents
+  }
+
+  class gcOrganizationsScreen <<StatelessWidget>>
+  class ProfileSetupScreen <<StatefulWidget>>
+  class _ProfileSetupScreenState <<State<ProfileSetupScreen>>
+  class gcSettingsScreen <<StatefulWidget>>
+  class _gcSettingsScreenState <<State<gcSettingsScreen>>> {
+    - UserService _userService
+    - bool _isLoading
+    - bool newEvents
+    - bool myUpcomingEvents
+    - bool houseUpdates
+    - bool urgentUpdates
+    - bool outlook
+    - bool textMessages
+  }
 }
 
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::auth::login_or_register.dart::_LoginOrRegisterState"
+package "Widgets" {
+  class gcEventFormModal <<StatefulWidget>> {
+    + DateTime selectedDate
+    + gcEvent? initialEvent
+  }
+  class _gcEventFormModalState <<State<gcEventFormModal>>> {
+    - GlobalKey<FormState> _formKey
+    - String _title
+    - String _description
+    - String _location
+    - TimeOfDay? _startTime
+    - TimeOfDay? _endTime
+  }
 
-class "greek_connect::firebase_options.dart::DefaultFirebaseOptions" {
-  {static} +FirebaseOptions web
-  {static} +FirebaseOptions android
-  {static} +FirebaseOptions ios
-  {static} +FirebaseOptions macos
-  {static} +FirebaseOptions windows
-  {static} +FirebaseOptions currentPlatform
+  class EventRsvpModal <<StatefulWidget>> {
+    + gcEvent event
+  }
+  class _EventRsvpModalState <<State<EventRsvpModal>>> {
+    - bool _isSaving
+    - bool? _alreadyRsvpd
+  }
+
+  class gcMyTextField <<StatelessWidget>>
 }
 
-"greek_connect::firebase_options.dart::DefaultFirebaseOptions" o-- "firebase_core_platform_interface::firebase_core_platform_interface.dart::FirebaseOptions"
+package "Models" {
+  class gcEvent {
+    + String id
+    + String title
+    + String? description
+    + DateTime date
+    + int color
+    + String? location
+    + String? userId
+    + TimeOfDay? startTime
+    + TimeOfDay? endTime
+    + Map<String, dynamic> toJson()
+    + gcEvent copyWith(...)
+  }
 
-class "greek_connect::main.dart::MyApp" {
-  +Widget build()
+  class UserProfile {
+    + String uid
+    + String email
+    + String? displayName
+    + String? organization
+    + DateTime createdAt
+    + DateTime? lastLoginAt
+    + Map<String, dynamic> toMap()
+    + UserProfile copyWith(...)
+  }
 }
 
-"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "greek_connect::main.dart::MyApp"
+package "Services" {
+  class gcEventStorage <<Service>> {
+    {static} + loadEvents()
+    {static} + saveEvents(...)
+    {static} + addEvent(...)
+    {static} + removeEvent(...)
+    {static} + updateEvent(...)
+    {static} + clearAllEvents()
+    {static} + getEventsForDate(...)
+    {static} + getEventsForRange(...)
+  }
 
-class "greek_connect::main.dart::MyHomePage" {
-  +State<MyHomePage> createState()
+  class RsvpService <<Service>> {
+    {static} + getUpcomingRsvpEvents(...)
+  }
+
+  class UserService <<Service>> {
+    + userProfileExists(...)
+    + getUserProfile(...)
+    + createUserProfile(...)
+    + updateUserProfile(...)
+    + updateLastLogin(...)
+    + updateOrganization(...)
+    + getNotificationPreferences(...)
+    + saveNotificationPreferences(...)
+  }
+
+  class OktaAuthService <<Service>> {
+    {static} + generatePKCE()
+    {static} + storeCodeVerifier(...)
+    {static} + getCodeVerifier()
+    {static} + clearCodeVerifier()
+    {static} + exchangeCodeForTokens(...)
+    {static} + getUserInfo(...)
+  }
+
+  class OAuthCallbackService <<Service>> {
+    {static} + handleOAuthCallback()
+  }
 }
 
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::main.dart::MyHomePage"
+' StatefulWidget <-> State ownership
+gcMyHomePage *-- _gcMyHomePageState
+gcLoginOrRegister *-- _gcLoginOrRegisterState
+gcLoginScreen *-- _gcLoginScreenState
+gcRegisterScreen *-- _gcRegisterScreenState
+gcDashboardScreen *-- _gcDashboardScreenState
+gcCalendarScreen *-- _gcCalendarScreenState
+gcNotificationsScreen *-- _gcNotificationsScreenState
+ProfileSetupScreen *-- _ProfileSetupScreenState
+gcSettingsScreen *-- _gcSettingsScreenState
+gcEventFormModal *-- _gcEventFormModalState
+EventRsvpModal *-- _EventRsvpModalState
 
-class "greek_connect::main.dart::_MyHomePageState" {
-  +int selectedIndex
-  +Widget build()
-}
+' App/navigation wiring
+gcMyApp ..> gcMyHomePage : home
+gcMyApp ..> gcDefaultFirebaseOptions
+gcMyApp ..> OAuthCallbackService
+_gcMyHomePageState ..> gcAuthPage
+_gcMyHomePageState ..> gcDashboardScreen
+_gcMyHomePageState ..> gcCalendarScreen
+_gcMyHomePageState ..> gcNotificationsScreen
+_gcMyHomePageState ..> ProfileSetupScreen
 
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::main.dart::_MyHomePageState"
+' Auth flow dependencies
+gcAuthPage ..> UserService
+gcAuthPage ..> gcDashboardScreen
+gcAuthPage ..> ProfileSetupScreen
+gcAuthPage ..> gcLoginOrRegister
+_gcLoginOrRegisterState ..> gcLoginScreen
+_gcLoginOrRegisterState ..> gcRegisterScreen
+_gcLoginScreenState ..> gcMyTextField
+_gcRegisterScreenState ..> gcMyTextField
+_gcLoginScreenState ..> OktaAuthService
 
-class "greek_connect::models::event.dart::Event" {
-  +String id
-  +String title
-  +String? description
-  +DateTime date
-  +int color
-  +String? location
-  +String? userId
-  +TimeOfDay? startTime
-  +TimeOfDay? endTime
-  +Color colorValue
-  +int hashCode
-  +Map<String, dynamic> toJson()
-  {static} -String _formatTime()
-  {static} -TimeOfDay _parseTimeOfDay()
-  +Event copyWith()
-  +String toString()
-  +bool ==()
-}
+' Screen dependencies
+_gcDashboardScreenState ..> RsvpService
+_gcDashboardScreenState ..> gcEvent
+_gcDashboardScreenState ..> gcOrganizationsScreen
+_gcDashboardScreenState ..> gcSettingsScreen
 
-"greek_connect::models::event.dart::Event" o-- "flutter::src::material::time.dart::TimeOfDay"
-"greek_connect::models::event.dart::Event" o-- "dart::ui::Color"
+_gcCalendarScreenState ..> gcEventStorage
+_gcCalendarScreenState ..> gcEventFormModal
+_gcCalendarScreenState ..> EventRsvpModal
+_gcCalendarScreenState ..> _CalendarEventList
+_gcCalendarScreenState ..> gcEvent
+_gcCalendarScreenState ..> CalendarMode
+_CalendarEventList ..> gcEvent
+_CalendarEventList ..> CalendarMode
 
-class "greek_connect::screens::calendar_screen.dart::CalendarScreen" {
-  +State<CalendarScreen> createState()
-}
+_gcNotificationsScreenState ..> RsvpService
+_gcNotificationsScreenState ..> gcEvent
+_ProfileSetupScreenState ..> UserService
+_ProfileSetupScreenState ..> UserProfile
+_gcSettingsScreenState ..> UserService
 
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::screens::calendar_screen.dart::CalendarScreen"      
-
-class "greek_connect::screens::calendar_screen.dart::_CalendarScreenState" {
-  -ValueNotifier<List<Event>> _selectedEvents
-  -Map<DateTime, List<Event>> _events
-  -DateTime _focusedDay
-  -DateTime? _selectedDay
-  -CalendarFormat _calendarFormat
-  -bool _isLoading
-  +void initState()
-  -void _signOut()
-  -DateTime _normalizeDate()
-  -dynamic _loadEvents()
-  -List<Event> _getEventsForDay()
-  -void _onDaySelected()
-  -dynamic _addEvent()
-  -dynamic _deleteEvent()
-  +Widget build()
-}
-
-"greek_connect::screens::calendar_screen.dart::_CalendarScreenState" o-- "flutter::src::foundation::change_notifier.dart::ValueNotifier<List<Event>>"
-"greek_connect::screens::calendar_screen.dart::_CalendarScreenState" o-- "table_calendar::src::shared::utils.dart::CalendarFormat"
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::screens::calendar_screen.dart::_CalendarScreenState"
-
-class "greek_connect::screens::dashboard_screen.dart::DashboardScreen" {
-  +State<DashboardScreen> createState()
-}
-
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::screens::dashboard_screen.dart::DashboardScreen"    
-
-class "greek_connect::screens::dashboard_screen.dart::_DashboardScreenState" {
-  -void _signOut()
-  +Widget build()
-}
-
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::screens::dashboard_screen.dart::_DashboardScreenState"       
-
-class "greek_connect::screens::form_screen.dart::FormScreen" {
-  +DateTime selectedDate
-  +_FormScreenState createState()
-}
-
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::screens::form_screen.dart::FormScreen"
-
-class "greek_connect::screens::form_screen.dart::_FormScreenState" {
-  -GlobalKey<FormState> _formKey
-  -DateTime _eventDate
-  -String _eventTitle
-  -String _eventDescription
-  -String _eventLocation
-  -TimeOfDay? _startTime
-  -TimeOfDay? _endTime
-  +void initState()
-  -String _formatTime()
-  +Widget build()
-}
-
-"greek_connect::screens::form_screen.dart::_FormScreenState" o-- "flutter::src::widgets::framework.dart::GlobalKey<FormState>"   
-"greek_connect::screens::form_screen.dart::_FormScreenState" o-- "flutter::src::material::time.dart::TimeOfDay"
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::screens::form_screen.dart::_FormScreenState"
-
-class "greek_connect::screens::login_screen.dart::LoginScreen" {
-  +dynamic Function()? onTap
-  +State<LoginScreen> createState()
-}
-
-"greek_connect::screens::login_screen.dart::LoginScreen" o-- "null::dynamic Function()"
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::screens::login_screen.dart::LoginScreen"
-
-class "greek_connect::screens::login_screen.dart::_LoginScreenState" {
-  -TextEditingController _emailController
-  -TextEditingController _passwordController
-  +void signIn()
-  +void displayMessage()
-  +Widget build()
-}
-
-"greek_connect::screens::login_screen.dart::_LoginScreenState" o-- "flutter::src::widgets::editable_text.dart::TextEditingController"
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::screens::login_screen.dart::_LoginScreenState"
-
-class "greek_connect::screens::register_screen.dart::RegisterScreen" {
-  +dynamic Function()? onTap
-  +State<RegisterScreen> createState()
-}
-
-"greek_connect::screens::register_screen.dart::RegisterScreen" o-- "null::dynamic Function()"
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::screens::register_screen.dart::RegisterScreen"      
-
-class "greek_connect::screens::register_screen.dart::_RegisterScreenState" {
-  -TextEditingController _emailController
-  -TextEditingController _passwordController
-  -TextEditingController _confirmPasswordController
-  +void register()
-  +void displayMessage()
-  +Widget build()
-}
-
-"greek_connect::screens::register_screen.dart::_RegisterScreenState" o-- "flutter::src::widgets::editable_text.dart::TextEditingController"
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::screens::register_screen.dart::_RegisterScreenState"
-
-class "greek_connect::screens::settings_screen.dart::SettingsScreen" {
-  +State<SettingsScreen> createState()
-}
-
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::screens::settings_screen.dart::SettingsScreen"      
-
-class "greek_connect::screens::settings_screen.dart::_SettingsScreenState" {
-  +bool newEvents
-  +bool myUpcomingEvents
-  +bool houseUpdates
-  +bool urgentUpdates
-  +bool outlook
-  +bool textMessages
-  +Widget build()
-}
-
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::screens::settings_screen.dart::_SettingsScreenState"
-
-class "greek_connect::services::event_storage.dart::EventStorage" {
-  {static} -String _key
-  {static} +dynamic loadEvents()
-  {static} +dynamic saveEvents()
-  {static} +dynamic addEvent()
-  {static} +dynamic removeEvent()
-  {static} +dynamic updateEvent()
-  {static} +dynamic clearAllEvents()
-  {static} +dynamic getEventsForDate()
-  {static} +dynamic getEventsForRange()
-  {static} -DateTime _normalizeDate()
-}
-
-class "greek_connect::widgets::event_form_modal.dart::EventFormModal" {
-  +DateTime selectedDate
-  +State<EventFormModal> createState()
-}
-
-"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "greek_connect::widgets::event_form_modal.dart::EventFormModal"     
-
-class "greek_connect::widgets::event_form_modal.dart::_EventFormModalState" {
-  -GlobalKey<FormState> _formKey
-  -String _title
-  -String _description
-  -String _location
-  -TimeOfDay? _startTime
-  -TimeOfDay? _endTime
-  +Widget build()
-}
-
-"greek_connect::widgets::event_form_modal.dart::_EventFormModalState" o-- "flutter::src::widgets::framework.dart::GlobalKey<FormState>"
-"greek_connect::widgets::event_form_modal.dart::_EventFormModalState" o-- "flutter::src::material::time.dart::TimeOfDay"
-"flutter::src::widgets::framework.dart::State" <|-- "greek_connect::widgets::event_form_modal.dart::_EventFormModalState"        
-
-class "greek_connect::widgets::text_field.dart::MyTextField" {
-  +TextEditingController controller
-  +String hintText
-  +bool obscureText
-  +Widget build()
-}
-
-"greek_connect::widgets::text_field.dart::MyTextField" o-- "flutter::src::widgets::editable_text.dart::TextEditingController"    
-"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "greek_connect::widgets::text_field.dart::MyTextField"
-
+' Widget/service/model dependencies
+_gcEventFormModalState ..> gcEvent
+_EventRsvpModalState ..> gcEvent
+RsvpService ..> gcEventStorage
+RsvpService ..> gcEvent
+gcEventStorage ..> gcEvent
+UserService ..> UserProfile
+OAuthCallbackService ..> OktaAuthService
 
 @enduml
