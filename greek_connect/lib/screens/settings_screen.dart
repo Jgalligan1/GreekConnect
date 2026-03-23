@@ -13,6 +13,7 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
   final _userService = UserService();
 
   bool _isLoading = true;
+  bool _adminMode = false;
 
   // Notification type toggles
   bool newEvents = true;
@@ -37,6 +38,7 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
       return;
     }
     final prefs = await _userService.getNotificationPreferences(uid);
+    final isAdmin = await _userService.getIsAdmin(uid);
     if (mounted) {
       setState(() {
         newEvents = prefs['newEvents'] ?? true;
@@ -45,6 +47,7 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
         urgentUpdates = prefs['urgentUpdates'] ?? true;
         outlook = prefs['outlook'] ?? true;
         textMessages = prefs['textMessages'] ?? false;
+        _adminMode = isAdmin;
         _isLoading = false;
       });
     }
@@ -61,6 +64,33 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
       'outlook': outlook,
       'textMessages': textMessages,
     });
+  }
+
+  Future<void> _setAdminMode(bool enabled) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final success = await _userService.setIsAdmin(uid, enabled);
+    if (!mounted) return;
+
+    if (success) {
+      setState(() => _adminMode = enabled);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled
+                ? 'Admin mode enabled for testing.'
+                : 'Admin mode disabled for testing.',
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update admin mode. Check permissions.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -135,6 +165,23 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
                       setState(() => textMessages = value!);
                       _savePreferences();
                     },
+                  ),
+
+                  const Divider(height: 40, thickness: 2),
+
+                  const Text(
+                    'Testing',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+
+                  SwitchListTile(
+                    title: const Text('Admin Mode (Testing Only)'),
+                    subtitle: const Text(
+                      'Toggle isAdmin on this account so you can test both roles.',
+                    ),
+                    value: _adminMode,
+                    onChanged: _setAdminMode,
                   ),
                 ],
               ),

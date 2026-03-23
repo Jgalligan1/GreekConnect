@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
+import '../services/user_service.dart';
 
 class gcEventFormModal extends StatefulWidget {
   final DateTime selectedDate;
@@ -18,9 +19,13 @@ class gcEventFormModal extends StatefulWidget {
 
 class _gcEventFormModalState extends State<gcEventFormModal> {
   final _formKey = GlobalKey<FormState>();
+  final _userService = UserService();
 
   String _title = '';
   String _description = '';
+  String? _selectedOrganization;
+  List<String> _availableOrganizations = [];
+  bool _loadingOrganizations = true;
   String _location = '';
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
@@ -32,10 +37,38 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
     if (initial != null) {
       _title = initial.title;
       _description = initial.description ?? '';
+      _selectedOrganization = initial.organization;
       _location = initial.location ?? '';
       _startTime = initial.startTime;
       _endTime = initial.endTime;
     }
+    _loadUserOrganizations();
+  }
+
+  Future<void> _loadUserOrganizations() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) {
+        setState(() {
+          _availableOrganizations = [];
+          _loadingOrganizations = false;
+        });
+      }
+      return;
+    }
+
+    final organizations = await _userService.getUserOrganizations(uid);
+    if (!mounted) return;
+
+    setState(() {
+      _availableOrganizations = organizations;
+      if (_selectedOrganization == null ||
+          !_availableOrganizations.contains(_selectedOrganization)) {
+        _selectedOrganization =
+            _availableOrganizations.isNotEmpty ? _availableOrganizations.first : null;
+      }
+      _loadingOrganizations = false;
+    });
   }
 
   // Builds a consistently styled text form field.
@@ -150,6 +183,66 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                     onSaved: (v) => _description = v ?? '',
                   ),
 
+                  // ----- Organization -----
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: _loadingOrganizations
+                        ? const LinearProgressIndicator(minHeight: 2)
+                        : DropdownButtonFormField<String>(
+                            value: _selectedOrganization,
+                            decoration: const InputDecoration(
+                              labelText: 'Organization',
+                              border: OutlineInputBorder(),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Color(0xFF51539C)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Color(0xFF51539C),
+                                  width: 2,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Color(0xFF51539C)),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Color(0xFF51539C),
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 20,
+                                horizontal: 12,
+                              ),
+                            ),
+                            hint: const Text('Select your organization'),
+                            items: _availableOrganizations
+                                .map(
+                                  (org) => DropdownMenuItem<String>(
+                                    value: org,
+                                    child: Text(org),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: _availableOrganizations.isEmpty
+                                ? null
+                                : (value) {
+                                    setState(() => _selectedOrganization = value);
+                                  },
+                            validator: (_) {
+                              if (_availableOrganizations.isEmpty) {
+                                return 'No organizations found in your profile';
+                              }
+                              if (_selectedOrganization == null ||
+                                  _selectedOrganization!.isEmpty) {
+                                return 'Required';
+                              }
+                              return null;
+                            },
+                          ),
+                  ),
+
                   // ----- Location -----
                   _buildTextField(
                     label: 'Location',
@@ -234,6 +327,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                               id: existing?.id ?? UniqueKey().toString(),
                               title: _title,
                               description: _description,
+                              organization: _selectedOrganization,
                               location: _location,
                               startTime: _startTime,
                               endTime: _endTime,

@@ -6,6 +6,7 @@ class gcEvent {
   final String id;
   final String title;
   final String? description;
+  final String? organization;
   final DateTime date;
   final int color;
   final String? location;
@@ -17,6 +18,7 @@ class gcEvent {
     String? id,
     required this.title,
     this.description,
+    this.organization,
     required this.date,
     int? color,
     this.location,
@@ -32,6 +34,7 @@ class gcEvent {
       'id': id,
       'title': title,
       'description': description,
+      'organization': organization,
       'date': date.toIso8601String(),
       'color': color,
       'location': location,
@@ -54,6 +57,7 @@ class gcEvent {
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
+      organization: json['organization'] as String?,
       date: DateTime.parse(json['date'] as String),
       color: json['color'] as int? ?? 0xFF2196F3,
       location: json['location'] as String?,
@@ -86,6 +90,7 @@ class gcEvent {
     String? id,
     String? title,
     String? description,
+    String? organization,
     DateTime? date,
     int? color,
     String? location,
@@ -97,6 +102,7 @@ class gcEvent {
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
+      organization: organization ?? this.organization,
       date: date ?? this.date,
       color: color ?? this.color,
       location: location ?? this.location,

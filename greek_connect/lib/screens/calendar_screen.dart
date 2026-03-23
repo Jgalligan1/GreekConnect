@@ -48,6 +48,11 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
     FirebaseAuth.instance.signOut();
   }
 
+  bool _canManageEvent(gcEvent event) {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    return currentUid != null && event.userId == currentUid;
+  }
+
   // Normalize DateTime to remove time component
   DateTime _normalizeDate(DateTime date) {
     return DateTime.utc(date.year, date.month, date.day);
@@ -99,20 +104,21 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
     final normalizedDate = _normalizeDate(event.date);
     if (_selectedDay == null) return;
 
-    setState(() {
-      _events.putIfAbsent(normalizedDate, () => []);
-      _events[normalizedDate]!.add(event);
-    });
-
-    if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
-      _selectedEvents.value = _getEventsForDay(_selectedDay!);
-    }
-
     final success = await gcEventStorage.addEvent(normalizedDate, event);
-    if (!success && mounted) {
+    if (success) {
+      setState(() {
+        _events.putIfAbsent(normalizedDate, () => []);
+        _events[normalizedDate]!.add(event);
+      });
+      if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
+        _selectedEvents.value = _getEventsForDay(_selectedDay!);
+      }
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to save event'),
+          content: Text(
+            'Could not save event. Check permissions and required fields.',
+          ),
           backgroundColor: Color(0xFF51539C),
         ),
       );
@@ -121,19 +127,39 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
 
   // Delete event
   Future<void> _deleteEvent(gcEvent event) async {
-    final normalizedDate = _normalizeDate(event.date);
-    setState(() {
-      _events[normalizedDate]?.removeWhere((e) => e.id == event.id);
-      if (_events[normalizedDate]?.isEmpty ?? false) {
-        _events.remove(normalizedDate);
+    if (!_canManageEvent(event)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You can only delete events you created.'),
+            backgroundColor: Color(0xFF51539C),
+          ),
+        );
       }
-    });
-
-    if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
-      _selectedEvents.value = _getEventsForDay(_selectedDay!);
+      return;
     }
 
-    await gcEventStorage.removeEvent(normalizedDate, event);
+    final normalizedDate = _normalizeDate(event.date);
+    final success = await gcEventStorage.removeEvent(normalizedDate, event);
+    if (success) {
+      setState(() {
+        _events[normalizedDate]?.removeWhere((e) => e.id == event.id);
+        if (_events[normalizedDate]?.isEmpty ?? false) {
+          _events.remove(normalizedDate);
+        }
+      });
+
+      if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
+        _selectedEvents.value = _getEventsForDay(_selectedDay!);
+      }
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not delete event. Check your permissions.'),
+          backgroundColor: Color(0xFF51539C),
+        ),
+      );
+    }
   }
 
   // Show the event form modal and return the submitted event (or null).
@@ -145,36 +171,9 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => LayoutBuilder(
-        builder: (context, constraints) {
-          final maxWidth =
-              constraints.maxWidth < 700 ? constraints.maxWidth : 640.0;
-          return Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 16,
-                    offset: Offset(0, -6),
-                  ),
-                ],
-              ),
-              height: MediaQuery.of(context).size.height * 0.8,
-              child: gcEventFormModal(
-                selectedDate: date,
-                initialEvent: initialEvent,
-              ),
-            ),
-          );
-        },
+      builder: (context) => gcEventFormModal(
+        selectedDate: date,
+        initialEvent: initialEvent,
       ),
     );
   }
@@ -182,6 +181,17 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
   // Handles a tap on an event card depending on the current mode.
   Future<void> _onEventTap(gcEvent event) async {
     if (_mode == CalendarMode.edit) {
+      if (!_canManageEvent(event)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You can only edit events you created.'),
+              backgroundColor: Color(0xFF51539C),
+            ),
+          );
+        }
+        return;
+      }
       final updated =
           await _showEventFormModal(event.date, initialEvent: event);
       if (updated != null) await _editEvent(event, updated);
@@ -392,6 +402,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                     builder: (context, events, _) => _CalendarEventList(
                       events: events,
                       mode: _mode,
+                      canManageEvent: _canManageEvent,
                       onDelete: _deleteEvent,
                       onEventTap: _onEventTap,
                     ),
@@ -420,12 +431,14 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
 class _CalendarEventList extends StatelessWidget {
   final List<gcEvent> events;
   final CalendarMode mode;
+  final bool Function(gcEvent) canManageEvent;
   final void Function(gcEvent) onDelete;
   final void Function(gcEvent) onEventTap;
 
   const _CalendarEventList({
     required this.events,
     required this.mode,
+    required this.canManageEvent,
     required this.onDelete,
     required this.onEventTap,
   });
@@ -453,6 +466,7 @@ class _CalendarEventList extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       itemBuilder: (context, index) {
         final event = events[index];
+        final canManage = canManageEvent(event);
         return Card(
           child: ListTile(
             leading: CircleAvatar(
@@ -480,7 +494,7 @@ class _CalendarEventList extends StatelessWidget {
                   Text('⏰ Ends at: ${event.endTime!.format(context)}'),
               ],
             ),
-            trailing: mode == CalendarMode.edit
+            trailing: mode == CalendarMode.edit && canManage
                 ? IconButton(
                     icon: const Icon(Icons.delete, color: Color(0xFF51539C)),
                     onPressed: () => onDelete(event),

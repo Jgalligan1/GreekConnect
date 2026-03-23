@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event.dart';
+import 'notification_service.dart';
 
 class gcEventStorage {
   static const String _key = 'events';
@@ -107,9 +108,19 @@ class gcEventStorage {
       events[normalizedDate]!.add(event);
       await saveEvents(events);
       return true;
-    } catch (e) {
+    } on FirebaseException catch (e) {
       print('Error adding event to Firestore: $e');
+      if (e.code == 'permission-denied') {
+        // Do not persist unauthorized local-only events; they appear to disappear on next sync.
+        return false;
+      }
       // Fall back to local-only save
+      final events = await loadEvents();
+      events.putIfAbsent(normalizedDate, () => []);
+      events[normalizedDate]!.add(event);
+      return await saveEvents(events);
+    } catch (e) {
+      print('Unexpected error adding event: $e');
       final events = await loadEvents();
       events.putIfAbsent(normalizedDate, () => []);
       events[normalizedDate]!.add(event);
@@ -126,6 +137,8 @@ class gcEventStorage {
           .doc(event.id);
       await docRef.delete();
 
+      await NotificationService.notifyEventCancelledForRsvps(event: event);
+
       final events = await loadEvents();
       events[normalizedDate]?.removeWhere((e) => e.id == event.id);
       if (events[normalizedDate]?.isEmpty ?? false) {
@@ -133,9 +146,22 @@ class gcEventStorage {
       }
       await saveEvents(events);
       return true;
-    } catch (e) {
+    } on FirebaseException catch (e) {
       print('Error removing event from Firestore: $e');
+      if (e.code == 'permission-denied') {
+        // Don't remove locally if backend denied delete.
+        return false;
+      }
       // Fallback to local-only removal
+      final events = await loadEvents();
+      if (events[normalizedDate] != null) {
+        events[normalizedDate]!.removeWhere((e) => e.id == event.id);
+        if (events[normalizedDate]!.isEmpty) events.remove(normalizedDate);
+        return await saveEvents(events);
+      }
+      return false;
+    } catch (e) {
+      print('Unexpected error removing event: $e');
       final events = await loadEvents();
       if (events[normalizedDate] != null) {
         events[normalizedDate]!.removeWhere((e) => e.id == event.id);

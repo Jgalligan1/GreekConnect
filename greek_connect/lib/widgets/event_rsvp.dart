@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
+import '../services/notification_service.dart';
 
 class EventRsvpModal extends StatefulWidget {
   final gcEvent event;
@@ -73,6 +74,11 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
+      await NotificationService.upsertUpcomingEventNotification(
+        userId: user.uid,
+        event: widget.event,
+      );
+
       if (!mounted) return;
       navigator.pop(true);
     } catch (e) {
@@ -104,6 +110,11 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
       final docId = '${widget.event.id}_${user.uid}';
       final docRef = FirebaseFirestore.instance.collection('rsvps').doc(docId);
       await docRef.delete();
+
+      await NotificationService.removeUpcomingEventNotification(
+        userId: user.uid,
+        eventId: widget.event.id,
+      );
 
       if (!mounted) return;
       setState(() => _alreadyRsvpd = false);
