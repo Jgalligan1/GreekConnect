@@ -118,9 +118,7 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
 
       if (!mounted) return;
       setState(() => _alreadyRsvpd = false);
-      messenger.showSnackBar(
-        const SnackBar(content: Text('RSVP cancelled')),
-      );
+      messenger.showSnackBar(const SnackBar(content: Text('RSVP cancelled')));
       setState(() => _isSaving = false);
     } catch (e) {
       messenger.showSnackBar(
@@ -214,6 +212,19 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
             widget.event.title,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
+          if (widget.event.organization != null &&
+              widget.event.organization!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Hosted by: ${widget.event.organization}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF51539C),
+                  fontSize: 16,
+                ),
+              ),
+            ),
           if (widget.event.description != null &&
               widget.event.description!.isNotEmpty)
             Padding(
@@ -244,7 +255,10 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
                     child: Text(
                       "You have already RSVP'd to this event",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -259,7 +273,10 @@ class _EventRsvpModalState extends State<EventRsvpModal> {
                           width: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Un-RSVP', style: TextStyle(color: Colors.white)),
+                      : const Text(
+                          'Un-RSVP',
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ],
             )

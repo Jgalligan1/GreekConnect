@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/event.dart';
 import '../services/event_storage.dart';
+import '../services/user_service.dart';
 import '../widgets/event_form_modal.dart';
 import '../widgets/event_rsvp.dart';
 
@@ -24,33 +25,33 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
-  CalendarMode _mode = CalendarMode.edit;
+  CalendarMode _mode = CalendarMode.rsvp;
 
   // Loading state
   bool _isLoading = true;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
     _selectedEvents = ValueNotifier([]);
+    _loadAdminStatus();
     _loadEvents();
   }
 
-  @override
-  void dispose() {
-    _selectedEvents.dispose();
-    super.dispose();
+  Future<void> _loadAdminStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final admin = await UserService().getIsAdmin(user.uid);
+    if (mounted) {
+      setState(() => _isAdmin = admin);
+    }
   }
 
   // Sign Out Function
   void _signOut() {
     FirebaseAuth.instance.signOut();
-  }
-
-  bool _canManageEvent(gcEvent event) {
-    final currentUid = FirebaseAuth.instance.currentUser?.uid;
-    return currentUid != null && event.userId == currentUid;
   }
 
   // Normalize DateTime to remove time component
@@ -104,21 +105,20 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
     final normalizedDate = _normalizeDate(event.date);
     if (_selectedDay == null) return;
 
+    setState(() {
+      _events.putIfAbsent(normalizedDate, () => []);
+      _events[normalizedDate]!.add(event);
+    });
+
+    if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
+      _selectedEvents.value = _getEventsForDay(_selectedDay!);
+    }
+
     final success = await gcEventStorage.addEvent(normalizedDate, event);
-    if (success) {
-      setState(() {
-        _events.putIfAbsent(normalizedDate, () => []);
-        _events[normalizedDate]!.add(event);
-      });
-      if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
-        _selectedEvents.value = _getEventsForDay(_selectedDay!);
-      }
-    } else if (mounted) {
+    if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Could not save event. Check permissions and required fields.',
-          ),
+          content: Text('Failed to save event'),
           backgroundColor: Color(0xFF51539C),
         ),
       );
@@ -127,87 +127,19 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
 
   // Delete event
   Future<void> _deleteEvent(gcEvent event) async {
-    if (!_canManageEvent(event)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You can only delete events you created.'),
-            backgroundColor: Color(0xFF51539C),
-          ),
-        );
-      }
-      return;
-    }
-
     final normalizedDate = _normalizeDate(event.date);
-    final success = await gcEventStorage.removeEvent(normalizedDate, event);
-    if (success) {
-      setState(() {
-        _events[normalizedDate]?.removeWhere((e) => e.id == event.id);
-        if (_events[normalizedDate]?.isEmpty ?? false) {
-          _events.remove(normalizedDate);
-        }
-      });
-
-      if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
-        _selectedEvents.value = _getEventsForDay(_selectedDay!);
+    setState(() {
+      _events[normalizedDate]?.removeWhere((e) => e.id == event.id);
+      if (_events[normalizedDate]?.isEmpty ?? false) {
+        _events.remove(normalizedDate);
       }
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not delete event. Check your permissions.'),
-          backgroundColor: Color(0xFF51539C),
-        ),
-      );
+    });
+
+    if (_selectedDay != null && isSameDay(_selectedDay!, event.date)) {
+      _selectedEvents.value = _getEventsForDay(_selectedDay!);
     }
-  }
 
-  // Show the event form modal and return the submitted event (or null).
-  Future<gcEvent?> _showEventFormModal(
-    DateTime date, {
-    gcEvent? initialEvent,
-  }) {
-    return showModalBottomSheet<gcEvent>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => gcEventFormModal(
-        selectedDate: date,
-        initialEvent: initialEvent,
-      ),
-    );
-  }
-
-  // Handles a tap on an event card depending on the current mode.
-  Future<void> _onEventTap(gcEvent event) async {
-    if (_mode == CalendarMode.edit) {
-      if (!_canManageEvent(event)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You can only edit events you created.'),
-              backgroundColor: Color(0xFF51539C),
-            ),
-          );
-        }
-        return;
-      }
-      final updated =
-          await _showEventFormModal(event.date, initialEvent: event);
-      if (updated != null) await _editEvent(event, updated);
-    } else if (_mode == CalendarMode.rsvp) {
-      final didRsvp = await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => EventRsvpModal(event: event),
-      );
-      if (didRsvp == true && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('RSVP saved')),
-        );
-      }
-    }
+    await gcEventStorage.removeEvent(normalizedDate, event);
   }
 
   // Edit event
@@ -222,8 +154,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
       }
 
       _events.putIfAbsent(newDate, () => []);
-      final newIndex =
-          _events[newDate]!.indexWhere((e) => e.id == oldEvent.id);
+      final newIndex = _events[newDate]!.indexWhere((e) => e.id == oldEvent.id);
       if (newIndex == -1) {
         _events[newDate]!.add(updatedEvent);
       } else {
@@ -243,8 +174,9 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Duck Connect Calendar'),
-        backgroundColor:
-            _mode == CalendarMode.rsvp ? const Color(0xFF51539C) : null,
+        backgroundColor: _mode == CalendarMode.rsvp
+            ? const Color(0xFF51539C)
+            : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -253,22 +185,25 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
               children: [
                 Expanded(
                   child: SegmentedButton<CalendarMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: CalendarMode.edit,
-                        label: Text('Edit'),
-                        icon: Icon(Icons.edit),
-                      ),
-                      ButtonSegment(
+                    segments: [
+                      if (_isAdmin)
+                        const ButtonSegment(
+                          value: CalendarMode.edit,
+                          label: Text('Edit'),
+                          icon: Icon(Icons.edit),
+                        ),
+                      const ButtonSegment(
                         value: CalendarMode.rsvp,
                         label: Text('RSVP'),
                         icon: Icon(Icons.event_available),
                       ),
                     ],
-                    selected: {_mode},
-                    onSelectionChanged: (selection) {
-                      setState(() => _mode = selection.first);
-                    },
+                    selected: {_isAdmin ? _mode : CalendarMode.rsvp},
+                    onSelectionChanged: _isAdmin
+                        ? (selection) {
+                            setState(() => _mode = selection.first);
+                          }
+                        : null,
                   ),
                 ),
               ],
@@ -277,38 +212,39 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
         ),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadEvents),
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            onPressed: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Clear All Events?'),
-                  content: const Text(
-                    'This will delete all events. This action cannot be undone.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Clear All Events?'),
+                    content: const Text(
+                      'This will delete all events. This action cannot be undone.',
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text(
-                        'Clear',
-                        style: TextStyle(color: Color(0xFF51539C)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
                       ),
-                    ),
-                  ],
-                ),
-              );
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          'Clear',
+                          style: TextStyle(color: Color(0xFF51539C)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
 
-              if (confirmed == true) {
-                await gcEventStorage.clearAllEvents();
-                _loadEvents();
-              }
-            },
-          ),
+                if (confirmed == true) {
+                  await gcEventStorage.clearAllEvents();
+                  _loadEvents();
+                }
+              },
+            ),
           IconButton(icon: const Icon(Icons.logout), onPressed: _signOut),
         ],
       ),
@@ -399,13 +335,183 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
                 Expanded(
                   child: ValueListenableBuilder<List<gcEvent>>(
                     valueListenable: _selectedEvents,
-                    builder: (context, events, _) => _CalendarEventList(
-                      events: events,
-                      mode: _mode,
-                      canManageEvent: _canManageEvent,
-                      onDelete: _deleteEvent,
-                      onEventTap: _onEventTap,
-                    ),
+                    builder: (context, events, _) {
+                      if (events.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.event_busy,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No events for this day',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        itemCount: events.length,
+                        padding: const EdgeInsets.all(8),
+                        itemBuilder: (context, index) {
+                          final event = events[index];
+                          return Card(
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: event.colorValue,
+                                child: const Icon(
+                                  Icons.event,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                event.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (event.organization != null &&
+                                      event.organization!.isNotEmpty)
+                                    Text(
+                                      "🏢 ${event.organization}",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF51539C),
+                                      ),
+                                    ),
+                                  if (event.description != null &&
+                                      event.description!.isNotEmpty)
+                                    Text(event.description!),
+                                  if (event.location != null &&
+                                      event.location!.isNotEmpty)
+                                    Text("📍 ${event.location}"),
+                                  if (event.startTime != null &&
+                                      event.endTime != null)
+                                    Text(
+                                      "⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}",
+                                    )
+                                  else if (event.startTime != null)
+                                    Text(
+                                      "⏰ Starts at: ${event.startTime!.format(context)}",
+                                    )
+                                  else if (event.endTime != null)
+                                    Text(
+                                      "⏰ Ends at: ${event.endTime!.format(context)}",
+                                    ),
+                                ],
+                              ),
+                              trailing: _mode == CalendarMode.edit
+                                  ? IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Color(0xFF51539C),
+                                      ),
+                                      onPressed: () => _deleteEvent(event),
+                                    )
+                                  : null,
+                              onTap: _mode == CalendarMode.edit
+                                  ? () async {
+                                      final updated =
+                                          await showModalBottomSheet<gcEvent>(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) => LayoutBuilder(
+                                              builder: (context, constraints) {
+                                                final maxWidth =
+                                                    constraints.maxWidth < 700
+                                                    ? constraints.maxWidth
+                                                    : 640.0;
+                                                return Align(
+                                                  alignment:
+                                                      Alignment.bottomCenter,
+                                                  child: Container(
+                                                    margin:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 12,
+                                                        ),
+                                                    constraints: BoxConstraints(
+                                                      maxWidth: maxWidth,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).scaffoldBackgroundColor,
+                                                      borderRadius:
+                                                          const BorderRadius.vertical(
+                                                            top:
+                                                                Radius.circular(
+                                                                  16,
+                                                                ),
+                                                          ),
+                                                      boxShadow: const [
+                                                        BoxShadow(
+                                                          color: Colors.black26,
+                                                          blurRadius: 16,
+                                                          offset: Offset(0, -6),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    height:
+                                                        MediaQuery.of(
+                                                          context,
+                                                        ).size.height *
+                                                        0.8,
+                                                    child: gcEventFormModal(
+                                                      selectedDate: event.date,
+                                                      initialEvent: event,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          );
+
+                                      if (updated != null) {
+                                        await _editEvent(event, updated);
+                                      }
+                                    }
+                                  : _mode == CalendarMode.rsvp
+                                  ? () async {
+                                      final didRsvp =
+                                          await showModalBottomSheet<bool>(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) =>
+                                                EventRsvpModal(event: event),
+                                          );
+
+                                      if (didRsvp == true && mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('RSVP saved'),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  : null,
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -414,96 +520,52 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
           ? FloatingActionButton(
               onPressed: () async {
                 if (_selectedDay == null) return;
-                final newEvent = await _showEventFormModal(_selectedDay!);
-                if (newEvent != null) await _addEvent(newEvent);
+
+                final newEvent = await showModalBottomSheet<gcEvent>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => LayoutBuilder(
+                    builder: (context, constraints) {
+                      final maxWidth = constraints.maxWidth < 700
+                          ? constraints.maxWidth
+                          : 640.0;
+                      return Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          constraints: BoxConstraints(maxWidth: maxWidth),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 16,
+                                offset: Offset(0, -6),
+                              ),
+                            ],
+                          ),
+                          height: MediaQuery.of(context).size.height * 0.8,
+                          child: gcEventFormModal(selectedDate: _selectedDay!),
+                        ),
+                      );
+                    },
+                  ),
+                );
+
+                if (newEvent != null) {
+                  await _addEvent(newEvent);
+                }
               },
               child: const Icon(Icons.add),
             )
           : null,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Private event list widget
-// ---------------------------------------------------------------------------
-
-class _CalendarEventList extends StatelessWidget {
-  final List<gcEvent> events;
-  final CalendarMode mode;
-  final bool Function(gcEvent) canManageEvent;
-  final void Function(gcEvent) onDelete;
-  final void Function(gcEvent) onEventTap;
-
-  const _CalendarEventList({
-    required this.events,
-    required this.mode,
-    required this.canManageEvent,
-    required this.onDelete,
-    required this.onEventTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (events.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No events for this day',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: events.length,
-      padding: const EdgeInsets.all(8),
-      itemBuilder: (context, index) {
-        final event = events[index];
-        final canManage = canManageEvent(event);
-        return Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: event.colorValue,
-              child: const Icon(Icons.event, color: Colors.white, size: 20),
-            ),
-            title: Text(
-              event.title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (event.description != null && event.description!.isNotEmpty)
-                  Text(event.description!),
-                if (event.location != null && event.location!.isNotEmpty)
-                  Text('📍 ${event.location}'),
-                if (event.startTime != null && event.endTime != null)
-                  Text(
-                    '⏰ ${event.startTime!.format(context)} - ${event.endTime!.format(context)}',
-                  )
-                else if (event.startTime != null)
-                  Text('⏰ Starts at: ${event.startTime!.format(context)}')
-                else if (event.endTime != null)
-                  Text('⏰ Ends at: ${event.endTime!.format(context)}'),
-              ],
-            ),
-            trailing: mode == CalendarMode.edit && canManage
-                ? IconButton(
-                    icon: const Icon(Icons.delete, color: Color(0xFF51539C)),
-                    onPressed: () => onDelete(event),
-                  )
-                : null,
-            onTap: () => onEventTap(event),
-          ),
-        );
-      },
     );
   }
 }

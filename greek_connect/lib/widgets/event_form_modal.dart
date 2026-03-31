@@ -64,53 +64,12 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
       _availableOrganizations = organizations;
       if (_selectedOrganization == null ||
           !_availableOrganizations.contains(_selectedOrganization)) {
-        _selectedOrganization =
-            _availableOrganizations.isNotEmpty ? _availableOrganizations.first : null;
+        _selectedOrganization = _availableOrganizations.isNotEmpty
+            ? _availableOrganizations.first
+            : null;
       }
       _loadingOrganizations = false;
     });
-  }
-
-  // Builds a consistently styled text form field.
-  Widget _buildTextField({
-    required String label,
-    required String initialValue,
-    bool isRequired = false,
-    int? maxLines = 1,
-    required FormFieldSetter<String> onSaved,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextFormField(
-        style: const TextStyle(fontSize: 18),
-        maxLines: maxLines,
-        initialValue: initialValue,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF51539C)),
-          ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-          ),
-          errorBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF51539C)),
-          ),
-          focusedErrorBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF51539C), width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 20,
-            horizontal: 12,
-          ),
-        ),
-        validator: isRequired
-            ? (v) => (v == null || v.isEmpty) ? 'Required' : null
-            : null,
-        onSaved: onSaved,
-      ),
-    );
   }
 
   @override
@@ -167,88 +126,136 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                   ),
                   const SizedBox(height: 12),
 
+                  // ----- No Organizations Error -----
+                  if (_availableOrganizations.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        border: Border.all(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'You do not belong to any organizations. Only members of organizations can create events. Please join an organization first.',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+
                   // ----- Title -----
-                  _buildTextField(
-                    label: 'Title',
-                    initialValue: _title,
-                    isRequired: true,
-                    onSaved: (v) => _title = v!,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: TextFormField(
+                      style: const TextStyle(fontSize: 18),
+                      initialValue: _title,
+                      decoration: InputDecoration(
+                        labelText: 'Title',
+                        border: const OutlineInputBorder(),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
+                        ),
+                        focusedErrorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
+                      ),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
+                      onSaved: (v) => _title = v!,
+                    ),
                   ),
 
                   // ----- Description -----
-                  _buildTextField(
-                    label: 'Description',
-                    initialValue: _description,
-                    maxLines: null,
-                    onSaved: (v) => _description = v ?? '',
-                  ),
-
-                  // ----- Organization -----
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: _loadingOrganizations
-                        ? const LinearProgressIndicator(minHeight: 2)
-                        : DropdownButtonFormField<String>(
-                            value: _selectedOrganization,
-                            decoration: const InputDecoration(
-                              labelText: 'Organization',
-                              border: OutlineInputBorder(),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Color(0xFF51539C)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color(0xFF51539C),
-                                  width: 2,
-                                ),
-                              ),
-                              errorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Color(0xFF51539C)),
-                              ),
-                              focusedErrorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color(0xFF51539C),
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 20,
-                                horizontal: 12,
-                              ),
-                            ),
-                            hint: const Text('Select your organization'),
-                            items: _availableOrganizations
-                                .map(
-                                  (org) => DropdownMenuItem<String>(
-                                    value: org,
-                                    child: Text(org),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: _availableOrganizations.isEmpty
-                                ? null
-                                : (value) {
-                                    setState(() => _selectedOrganization = value);
-                                  },
-                            validator: (_) {
-                              if (_availableOrganizations.isEmpty) {
-                                return 'No organizations found in your profile';
-                              }
-                              if (_selectedOrganization == null ||
-                                  _selectedOrganization!.isEmpty) {
-                                return 'Required';
-                              }
-                              return null;
-                            },
+                    child: TextFormField(
+                      style: const TextStyle(fontSize: 18),
+                      maxLines: null,
+                      initialValue: _description,
+                      decoration: InputDecoration(
+                        labelText: 'Description',
+                        border: const OutlineInputBorder(),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
                           ),
+                        ),
+                        errorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
+                        ),
+                        focusedErrorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
+                      ),
+                      onSaved: (v) => _description = v ?? '',
+                    ),
                   ),
 
                   // ----- Location -----
-                  _buildTextField(
-                    label: 'Location',
-                    initialValue: _location,
-                    isRequired: true,
-                    onSaved: (v) => _location = v!,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: TextFormField(
+                      style: const TextStyle(fontSize: 18),
+                      initialValue: _location,
+                      decoration: InputDecoration(
+                        labelText: 'Location',
+                        border: const OutlineInputBorder(),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF51539C)),
+                        ),
+                        focusedErrorBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xFF51539C),
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
+                      ),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
+                      onSaved: (v) => _location = v!,
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -319,26 +326,29 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            _formKey.currentState!.save();
-                            final existing = widget.initialEvent;
-                            final newEvent = gcEvent(
-                              id: existing?.id ?? UniqueKey().toString(),
-                              title: _title,
-                              description: _description,
-                              organization: _selectedOrganization,
-                              location: _location,
-                              startTime: _startTime,
-                              endTime: _endTime,
-                              date: widget.selectedDate,
-                              userId: existing?.userId ??
-                                  FirebaseAuth.instance.currentUser?.uid,
-                              color: existing?.color,
-                            );
-                            Navigator.pop(context, newEvent);
-                          }
-                        },
+                        onPressed: _availableOrganizations.isEmpty
+                            ? null
+                            : () {
+                                if (_formKey.currentState!.validate()) {
+                                  _formKey.currentState!.save();
+                                  final existing = widget.initialEvent;
+                                  final newEvent = gcEvent(
+                                    id: existing?.id ?? UniqueKey().toString(),
+                                    title: _title,
+                                    description: _description,
+                                    organization: _selectedOrganization,
+                                    location: _location,
+                                    startTime: _startTime,
+                                    endTime: _endTime,
+                                    date: widget.selectedDate,
+                                    userId:
+                                        existing?.userId ??
+                                        FirebaseAuth.instance.currentUser?.uid,
+                                    color: existing?.color,
+                                  );
+                                  Navigator.pop(context, newEvent);
+                                }
+                              },
                         child: const Text(
                           "Save",
                           style: TextStyle(fontSize: 16),

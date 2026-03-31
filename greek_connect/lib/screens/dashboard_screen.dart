@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event.dart';
-import '../services/rsvp_service.dart';
+import '../services/event_storage.dart';
 import 'settings_screen.dart';
 import 'organizations_screen.dart';
 
@@ -23,8 +24,52 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
     _upcomingRsvpEvents = _loadUpcomingRsvpEvents();
   }
 
-  Future<List<gcEvent>> _loadUpcomingRsvpEvents() =>
-      RsvpService.getUpcomingRsvpEvents(limit: 5);
+  Future<List<gcEvent>> _loadUpcomingRsvpEvents() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return [];
+    }
+
+    try {
+      // Get all events from storage
+      final allEventsMap = await gcEventStorage.loadEvents();
+      final allEvents = allEventsMap.values.expand((list) => list).toList();
+
+      // Get all RSVPs for this user
+      final rsvpsSnapshot = await FirebaseFirestore.instance
+          .collection('rsvps')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      final rsvpEventIds = {
+        for (final doc in rsvpsSnapshot.docs) doc['eventId'] as String,
+      };
+
+      // Filter events to only those the user has RSVPd to
+      final rsvpdEvents = allEvents
+          .where((event) => rsvpEventIds.contains(event.id))
+          .toList();
+
+      // Filter to only future events (normalize dates to UTC for consistent comparison)
+      final now = DateTime.now();
+      final todayUtc = DateTime.utc(now.year, now.month, now.day);
+      final upcomingEvents = rsvpdEvents
+          .where(
+            (event) =>
+                event.date.isAfter(todayUtc) ||
+                event.date.isAtSameMomentAs(todayUtc),
+          )
+          .toList();
+
+      // Sort by date (soonest first)
+      upcomingEvents.sort((a, b) => a.date.compareTo(b.date));
+
+      return upcomingEvents.take(5).toList(); // Show only top 5
+    } catch (e) {
+      print('Error loading upcoming RSVP events: $e');
+      return [];
+    }
+  }
 
   // Sign Out Function
   void _signOut() {
@@ -33,13 +78,6 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final displayName = currentUser?.displayName?.trim();
-    final greetingName =
-        displayName != null && displayName.isNotEmpty
-        ? displayName
-        : currentUser?.email?.split('@').first ?? 'there';
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -59,7 +97,7 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                 children: [
                   const SizedBox(height: 50),
                   Text(
-                    'Hello $greetingName, Welcome to the Dashboard!',
+                    'Hello ${FirebaseAuth.instance.currentUser!.displayName!}, Welcome to the Dashboard!',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -211,6 +249,16 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                                  if (event.organization != null &&
+                                      event.organization!.isNotEmpty)
+                                    Text(
+                                      'Hosted by: ${event.organization}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF51539C),
+                                      ),
+                                    ),
                                   if (event.startTime != null)
                                     Text(
                                       'Time: ${event.startTime!.format(context)}',
