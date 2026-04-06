@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ───────────────────────────────────────────────────────
+
+    // Returns true if the requesting user is authenticated.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Returns true if the requesting user is the owner of the document uid.
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Reads the caller's user document and checks the isAdmin flag.
+    // NOTE: This incurs one extra read per write operation on guarded collections.
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // ── users collection ───────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Any signed-in user can read their own profile.
+      allow read: if isOwner(uid);
+
+      // A user can create their own profile on sign-up.
+      allow create: if isOwner(uid);
+
+      //     TESTING ONLY — any user can update their own profile, including
+      //     toggling isAdmin on themselves. Remove this and restore the
+      //     stricter rules below before going to production.
+      allow update: if isOwner(uid);
+
+      // ── Production rules (re-enable when testing is done) ─────────────────
+      // allow update: if isOwner(uid) &&
+      //   (
+      //     !('isAdmin' in request.resource.data) ||
+      //     request.resource.data.isAdmin == resource.data.isAdmin
+      //   );
+      // allow update: if isAdmin();
+
+      // Only admins may delete user profiles.
+      allow delete: if isAdmin();
+    }
+
+    // ── events collection ──────────────────────────────────────────────────────
+    match /events/{eventId} {
+      // Anyone signed in can read events (needed for RSVP mode).
+      allow read: if isSignedIn();
+
+      // Only admins may create events, and the event must carry an organization.
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['organization']) &&
+        request.resource.data.organization is string &&
+        request.resource.data.organization.size() > 0;
+
+      // Only admins may update or delete events.
+      allow update, delete: if isAdmin();
+    }
+
+    // ── rsvps collection ───────────────────────────────────────────────────────
+    match /rsvps/{rsvpId} {
+      // A user can read their own RSVPs.
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // A signed-in user can create/update/delete their own RSVP.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ── in_app_notifications collection ────────────────────────────────────────
+    match /in_app_notifications/{notificationId} {
+      // A user can read their own notifications.
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // A user can create/update/delete their own notifications.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ── invitationCodes collection ─────────────────────────────────────────────
+    match /invitationCodes/{codeId} {
+      // Any signed-in user can read invitation codes (needed to validate when joining).
+      allow read: if isSignedIn();
+
+      // Only admins may create invitation codes.
+      allow create: if isAdmin();
+
+      // Allow updates:
+      // - Admins can update anything (e.g., revoke codes by setting isActive to false)
+      // - Signed-in users can increment timesUsed when joining with a valid code
+      allow update: if isSignedIn() &&
+        (isAdmin() ||
+         (request.resource.data.timesUsed == resource.data.timesUsed + 1 &&
+          request.resource.data.code == resource.data.code &&
+          request.resource.data.organizationName == resource.data.organizationName &&
+          request.resource.data.createdBy == resource.data.createdBy &&
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.expiresAt == resource.data.expiresAt &&
+          request.resource.data.usageLimit == resource.data.usageLimit &&
+          request.resource.data.isActive == resource.data.isActive));
+
+      // Only admins may delete invitation codes.
+      allow delete: if isAdmin();
+    }
+
+  }
+}
