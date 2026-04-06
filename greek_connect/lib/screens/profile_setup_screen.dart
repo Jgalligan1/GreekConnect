@@ -104,7 +104,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Complete Your Profile'),
         automaticallyImplyLeading: false, // Prevent back navigation
       ),
       body: _isLoading

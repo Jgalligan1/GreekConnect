@@ -5,8 +5,6 @@ class UserProfile {
   final String? organization;
   final DateTime createdAt;
   final DateTime? lastLoginAt;
-  final bool isAdmin;
-  final List<String> adminForOrganizations;
 
   UserProfile({
     required this.uid,
@@ -15,8 +13,6 @@ class UserProfile {
     this.organization,
     required this.createdAt,
     this.lastLoginAt,
-    this.isAdmin = false,
-    this.adminForOrganizations = const [],
   });
 
   // Convert to Firestore document
@@ -28,8 +24,6 @@ class UserProfile {
       'organization': organization,
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt?.toIso8601String(),
-      'isAdmin': isAdmin,
-      'adminForOrganizations': adminForOrganizations,
     };
   }
 
@@ -44,10 +38,6 @@ class UserProfile {
       lastLoginAt: map['lastLoginAt'] != null
           ? DateTime.parse(map['lastLoginAt'])
           : null,
-      isAdmin: map['isAdmin'] ?? false,
-      adminForOrganizations: List<String>.from(
-        map['adminForOrganizations'] ?? [],
-      ),
     );
   }
 
@@ -59,8 +49,6 @@ class UserProfile {
     String? organization,
     DateTime? createdAt,
     DateTime? lastLoginAt,
-    bool? isAdmin,
-    List<String>? adminForOrganizations,
   }) {
     return UserProfile(
       uid: uid ?? this.uid,
@@ -69,9 +57,6 @@ class UserProfile {
       organization: organization ?? this.organization,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
-      isAdmin: isAdmin ?? this.isAdmin,
-      adminForOrganizations:
-          adminForOrganizations ?? this.adminForOrganizations,
     );
   }
 }

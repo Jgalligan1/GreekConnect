@@ -5,7 +5,7 @@ import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/notifications_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/profile_setup_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -87,7 +87,12 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
                 page = gcNotificationsScreen();
                 break;
               case 3:
-                page = const ProfileScreen();
+                // For testing only - access profile setup
+                final user = snapshot.data;
+                page = ProfileSetupScreen(
+                  email: user?.email ?? '',
+                  displayName: user?.displayName,
+                );
                 break;
               default:
                 page = gcDashboardScreen();
