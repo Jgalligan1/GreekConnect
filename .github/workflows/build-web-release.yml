@@ -57,7 +57,7 @@ jobs:
         run: |
           COMMIT_HASH=${{ github.sha }}
           SHORT_HASH=${COMMIT_HASH:0:7}
-          README_PATH="GreekConnect/README.md"
+          README_PATH="README.md"
 
           # Extract the base version (major.minor) from the current Version line
           # Format: "Version: X.Y.HASH" -> extract "X.Y"
