@@ -173,7 +173,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Duck Connect Calendar'),
+        title: const Text('Symposia Calendar'),
         backgroundColor: _mode == CalendarMode.rsvp
             ? const Color(0xFF51539C)
             : null,
