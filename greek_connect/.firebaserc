@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "greekconnect-b03ba": {
+      "hosting": {
+        "symposia": [
+          "symposia"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
