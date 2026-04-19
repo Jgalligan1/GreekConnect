@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:greek_connect/screens/settings_screen.dart';
 
 class gcOrganizationsScreen extends StatelessWidget {
   const gcOrganizationsScreen({super.key});
+
+  Future<void> _openTopMenuDestination(
+    BuildContext context,
+    String value,
+  ) async {
+    if (value == 'settings') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const gcSettingsScreen()),
+      );
+    }
+  }
 
   // Temporary mock data
   final List<String> myOrganizations = const ['Chi Phi', 'FSL Office'];
@@ -17,7 +29,17 @@ class gcOrganizationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Organizations')),
+      appBar: AppBar(
+        title: const Text('Organizations'),
+        leading: PopupMenuButton<String>(
+          tooltip: 'Menu',
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onSelected: (value) => _openTopMenuDestination(context, value),
+          itemBuilder: (context) => const [
+            PopupMenuItem<String>(value: 'settings', child: Text('Settings')),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(

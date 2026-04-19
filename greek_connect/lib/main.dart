@@ -5,7 +5,9 @@ import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/organizations_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/settings_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -64,6 +66,21 @@ class gcMyHomePage extends StatefulWidget {
 class _gcMyHomePageState extends State<gcMyHomePage> {
   int selectedIndex = 0;
 
+  Future<void> _openTopMenuDestination(String value) async {
+    if (value == 'organizations') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const gcOrganizationsScreen()),
+      );
+      return;
+    }
+
+    if (value == 'settings') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const gcSettingsScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -94,7 +111,39 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
             }
 
             return Scaffold(
-              body: page,
+              body: Stack(
+                children: [
+                  Positioned.fill(child: page),
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          color: Colors.white,
+                          elevation: 3,
+                          borderRadius: BorderRadius.circular(10),
+                          child: PopupMenuButton<String>(
+                            tooltip: 'Menu',
+                            icon: const Icon(Icons.menu),
+                            onSelected: _openTopMenuDestination,
+                            itemBuilder: (context) => const [
+                              PopupMenuItem<String>(
+                                value: 'organizations',
+                                child: Text('Organizations'),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'settings',
+                                child: Text('Settings'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               bottomNavigationBar: BottomNavigationBar(
                 type: BottomNavigationBarType.fixed,
                 backgroundColor:

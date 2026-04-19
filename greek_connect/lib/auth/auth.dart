@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:greek_connect/auth/login_or_register.dart';
+import 'package:greek_connect/screens/login_screen.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'package:greek_connect/screens/profile_setup_screen.dart';
 import 'package:greek_connect/services/user_service.dart';
@@ -53,7 +53,7 @@ class gcAuthPage extends StatelessWidget {
             );
           } else {
             print('No user authenticated, showing login screen');
-            return const gcLoginOrRegister();
+            return const gcLoginScreen();
           }
         },
       ),

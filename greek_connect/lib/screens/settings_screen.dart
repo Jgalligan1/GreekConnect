@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:greek_connect/screens/organizations_screen.dart';
 import '../services/user_service.dart';
 
 class gcSettingsScreen extends StatefulWidget {
@@ -93,10 +94,31 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
     }
   }
 
+  Future<void> _openTopMenuDestination(String value) async {
+    if (value == 'organizations') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const gcOrganizationsScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        leading: PopupMenuButton<String>(
+          tooltip: 'Menu',
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onSelected: _openTopMenuDestination,
+          itemBuilder: (context) => const [
+            PopupMenuItem<String>(
+              value: 'organizations',
+              child: Text('Organizations'),
+            ),
+          ],
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
