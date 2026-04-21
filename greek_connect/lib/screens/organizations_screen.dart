@@ -9,7 +9,7 @@ class gcOrganizationsScreen extends StatelessWidget {
     String value,
   ) async {
     if (value == 'settings') {
-      await Navigator.of(context).push(
+      await Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const gcSettingsScreen()),
       );
     }
@@ -31,14 +31,16 @@ class gcOrganizationsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Organizations'),
-        leading: PopupMenuButton<String>(
-          tooltip: 'Menu',
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onSelected: (value) => _openTopMenuDestination(context, value),
-          itemBuilder: (context) => const [
-            PopupMenuItem<String>(value: 'settings', child: Text('Settings')),
-          ],
-        ),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Menu',
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onSelected: (value) => _openTopMenuDestination(context, value),
+            itemBuilder: (context) => const [
+              PopupMenuItem<String>(value: 'settings', child: Text('Settings')),
+            ],
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
