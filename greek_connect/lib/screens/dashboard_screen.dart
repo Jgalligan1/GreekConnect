@@ -9,6 +9,7 @@ import '../services/notification_service.dart';
 
 class gcDashboardScreen extends StatefulWidget {
   const gcDashboardScreen({super.key});
+  @override
   State<gcDashboardScreen> createState() => _gcDashboardScreenState();
 }
 
