@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greek_connect/services/okta_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'faq_screen.dart';
 
 class gcLoginScreen extends StatefulWidget {
   const gcLoginScreen({super.key});
@@ -61,7 +62,20 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(
+        title: const Text('Login'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const gcFAQScreen()),
+              );
+            },
+            tooltip: 'FAQ',
+          ),
+        ],
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25.0),
