@@ -5,7 +5,6 @@ import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/notifications_screen.dart';
-import 'screens/organizations_screen.dart';
 import 'screens/organization_settings_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
@@ -68,13 +67,6 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
   int selectedIndex = 0;
 
   Future<void> _openTopMenuDestination(String value) async {
-    if (value == 'organizations') {
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const gcOrganizationsScreen()),
-      );
-      return;
-    }
-
     if (value == 'organization_settings') {
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -138,10 +130,6 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
                             icon: const Icon(Icons.menu),
                             onSelected: _openTopMenuDestination,
                             itemBuilder: (context) => const [
-                              PopupMenuItem<String>(
-                                value: 'organizations',
-                                child: Text('Organizations'),
-                              ),
                               PopupMenuItem<String>(
                                 value: 'organization_settings',
                                 child: Text('Organization Settings'),

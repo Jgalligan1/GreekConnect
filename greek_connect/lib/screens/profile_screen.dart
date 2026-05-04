@@ -171,12 +171,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _userProfile!.organization != null &&
         _userProfile!.organization!.isNotEmpty;
     final isAdmin =
-        _userProfile!.isAdmin ||
-        (_userProfile!.adminForOrganizations.isNotEmpty &&
-            (hasOrganization &&
-                _userProfile!.adminForOrganizations.contains(
-                  _userProfile!.organization,
-                )));
+        hasOrganization &&
+        _userProfile!.adminForOrganizations.contains(
+          _userProfile!.organization,
+        );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -230,7 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Organization Section
             const Text(
-              'Organization',
+              'Organization(s)',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

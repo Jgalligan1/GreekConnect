@@ -17,10 +17,12 @@ class _OrganizationSettingsScreenState
   final UserService _userService = UserService();
 
   late String _currentUserId;
+  List<String> _userOrganizations = [];
   List<String> _adminOrganizations = [];
   String? _selectedOrganization;
   List<UserProfile> _organizationMembers = [];
   int _adminCount = 0;
+  bool _isCurrentUserAdminOfSelected = false;
 
   bool _isLoading = true;
   bool _isLoadingMembers = false;
@@ -44,19 +46,28 @@ class _OrganizationSettingsScreenState
       final profile = await _userService.getUserProfile(_currentUserId);
       if (profile != null) {
         if (mounted) {
-          // Get organizations where user is admin
+          // Get all organizations user belongs to
+          final userOrgs = List<String>.from(profile.organizations);
           final adminOrgs = List<String>.from(profile.adminForOrganizations);
 
           setState(() {
+            _userOrganizations = userOrgs;
             _adminOrganizations = adminOrgs;
             _isLoading = false;
 
-            // Select first admin org if available
-            if (_adminOrganizations.isNotEmpty) {
-              _selectedOrganization = _adminOrganizations.first;
-              _loadOrganizationMembers();
+            // Select first org if available (admin or not)
+            if (_userOrganizations.isNotEmpty) {
+              _selectedOrganization = _userOrganizations.first;
+              _isCurrentUserAdminOfSelected = adminOrgs.contains(
+                _selectedOrganization,
+              );
             }
           });
+
+          // Load members after state is set
+          if (_selectedOrganization != null) {
+            _loadOrganizationMembers();
+          }
         }
       } else {
         if (mounted) {
@@ -112,6 +123,7 @@ class _OrganizationSettingsScreenState
       setState(() {
         _selectedOrganization = orgName;
         _organizationMembers = [];
+        _isCurrentUserAdminOfSelected = _adminOrganizations.contains(orgName);
       });
       _loadOrganizationMembers();
     }
@@ -291,14 +303,14 @@ class _OrganizationSettingsScreenState
       appBar: AppBar(title: const Text('Organization Settings')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _adminOrganizations.isEmpty
+          : _userOrganizations.isEmpty
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.lock, size: 64, color: Colors.grey),
+                    const Icon(Icons.group, size: 64, color: Colors.grey),
                     const SizedBox(height: 16),
                     const Text(
                       'No Organizations',
@@ -309,7 +321,7 @@ class _OrganizationSettingsScreenState
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'You are not an admin of any organizations.',
+                      'You are not a member of any organizations yet.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -335,7 +347,7 @@ class _OrganizationSettingsScreenState
                   DropdownButtonFormField<String>(
                     value: _selectedOrganization,
                     isExpanded: true,
-                    items: _adminOrganizations.map((org) {
+                    items: _userOrganizations.map((org) {
                       return DropdownMenuItem<String>(
                         value: org,
                         child: Text(org),
@@ -499,15 +511,25 @@ class _OrganizationSettingsScreenState
                                       SizedBox(
                                         height: 28,
                                         child: ElevatedButton(
-                                          onPressed: () => _promoteUser(
-                                            member.uid,
-                                            member.displayName ?? member.email,
-                                          ),
+                                          onPressed:
+                                              _isCurrentUserAdminOfSelected
+                                              ? () => _promoteUser(
+                                                  member.uid,
+                                                  member.displayName ??
+                                                      member.email,
+                                                )
+                                              : () => _showMessage(
+                                                  'You must be an admin to promote members',
+                                                ),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(
-                                              0xFF801C0D,
-                                            ),
-                                            foregroundColor: Colors.white,
+                                            backgroundColor:
+                                                _isCurrentUserAdminOfSelected
+                                                ? const Color(0xFF801C0D)
+                                                : Colors.grey.shade300,
+                                            foregroundColor:
+                                                _isCurrentUserAdminOfSelected
+                                                ? Colors.white
+                                                : Colors.grey,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 6,
                                               vertical: 2,
@@ -523,16 +545,27 @@ class _OrganizationSettingsScreenState
                                       SizedBox(
                                         height: 28,
                                         child: ElevatedButton(
-                                          onPressed: _adminCount <= 2
-                                              ? null
-                                              : () => _demoteUser(
-                                                  member.uid,
-                                                  member.displayName ??
-                                                      member.email,
-                                                ),
+                                          onPressed:
+                                              !_isCurrentUserAdminOfSelected
+                                              ? () => _showMessage(
+                                                  'You must be an admin to demote members',
+                                                )
+                                              : (_adminCount <= 2
+                                                    ? null
+                                                    : () => _demoteUser(
+                                                        member.uid,
+                                                        member.displayName ??
+                                                            member.email,
+                                                      )),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.orange,
-                                            foregroundColor: Colors.white,
+                                            backgroundColor:
+                                                _isCurrentUserAdminOfSelected
+                                                ? Colors.orange
+                                                : Colors.grey.shade300,
+                                            foregroundColor:
+                                                _isCurrentUserAdminOfSelected
+                                                ? Colors.white
+                                                : Colors.grey,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 6,
                                               vertical: 2,
@@ -550,13 +583,25 @@ class _OrganizationSettingsScreenState
                                     SizedBox(
                                       height: 28,
                                       child: ElevatedButton(
-                                        onPressed: () => _removeUser(
-                                          member.uid,
-                                          member.displayName ?? member.email,
-                                        ),
+                                        onPressed:
+                                            !_isCurrentUserAdminOfSelected
+                                            ? () => _showMessage(
+                                                'You must be an admin to remove members',
+                                              )
+                                            : () => _removeUser(
+                                                member.uid,
+                                                member.displayName ??
+                                                    member.email,
+                                              ),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          foregroundColor: Colors.white,
+                                          backgroundColor:
+                                              _isCurrentUserAdminOfSelected
+                                              ? Colors.red
+                                              : Colors.grey.shade300,
+                                          foregroundColor:
+                                              _isCurrentUserAdminOfSelected
+                                              ? Colors.white
+                                              : Colors.grey,
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 6,
                                             vertical: 2,
