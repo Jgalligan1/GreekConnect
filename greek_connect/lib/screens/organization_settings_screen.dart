@@ -129,6 +129,49 @@ class _OrganizationSettingsScreenState
     }
   }
 
+  Future<void> _leaveOrganization() async {
+    if (_selectedOrganization == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Organization?'),
+        content: Text(
+          'Are you sure you want to leave $_selectedOrganization? You will no longer have access to this organization and its events.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Leave', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final success = await _userService.leaveOrganization(
+        _currentUserId,
+        _selectedOrganization!,
+      );
+
+      if (success) {
+        _showMessage('You have left $_selectedOrganization');
+        // Reload current user data to update organization list
+        await _loadCurrentUser();
+      } else {
+        _showMessage('Failed to leave organization');
+      }
+    } catch (e) {
+      _showMessage('Error: $e');
+    }
+  }
+
   Future<void> _promoteUser(String targetUserId, String targetUserName) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -360,6 +403,22 @@ class _OrganizationSettingsScreenState
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Leave Organization Button
+                  ElevatedButton.icon(
+                    onPressed: _leaveOrganization,
+                    icon: const Icon(Icons.exit_to_app),
+                    label: const Text('Leave Organization'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
                         vertical: 12,
                       ),
                     ),

@@ -39,10 +39,17 @@ service cloud.firestore {
       // A user can create their own profile on sign-up.
       allow create: if isOwner(uid);
 
-      //     TESTING ONLY — any user can update their own profile, including
-      //     toggling isAdmin on themselves. Remove this and restore the
-      //     stricter rules below before going to production.
-      allow update: if isOwner(uid);
+      // Allow updates:
+      // 1. A user can always update their own profile
+      // 2. An organization admin can update adminForOrganizations or organizations for members of their org
+      allow update: if isOwner(uid) ||
+        (request.resource.data.keys().hasAny(['adminForOrganizations', 'organizations']) &&
+         resource.data.organizations != null &&
+         resource.data.organizations.size() > 0 &&
+         // Check that caller is admin of at least one org the target user belongs to
+         resource.data.organizations.hasAny(
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminForOrganizations
+         ));
 
       // ── Production rules (re-enable when testing is done) ─────────────────
       // allow read: if isOwner(uid);

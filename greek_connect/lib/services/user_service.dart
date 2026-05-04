@@ -439,4 +439,54 @@ class UserService {
       return false;
     }
   }
+
+  /// Allow a user to leave an organization voluntarily.
+  /// Removes the organization from their 'organizations' and 'adminForOrganizations' arrays.
+  /// If it's their primary organization, reassigns to the first remaining organization or null.
+  Future<bool> leaveOrganization(String userId, String organizationName) async {
+    try {
+      // Get user
+      final userDoc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .get();
+      final userData = userDoc.data();
+
+      if (userData == null) {
+        print('Error: User not found');
+        return false;
+      }
+
+      // Remove from organizations array
+      final organizations = List<String>.from(userData['organizations'] ?? []);
+      organizations.remove(organizationName);
+
+      // Handle primary organization field
+      final primaryOrg = userData['organization'];
+      String? newPrimaryOrg;
+
+      if (primaryOrg == organizationName) {
+        // If leaving the primary org, set to the first remaining org (if any)
+        newPrimaryOrg = organizations.isNotEmpty ? organizations.first : null;
+      }
+
+      // Remove from adminForOrganizations if present
+      final adminForOrgs = List<String>.from(
+        userData['adminForOrganizations'] ?? [],
+      );
+      adminForOrgs.remove(organizationName);
+
+      // Update user document
+      await _firestore.collection(_usersCollection).doc(userId).set({
+        'organizations': organizations,
+        if (primaryOrg == organizationName) 'organization': newPrimaryOrg,
+        'adminForOrganizations': adminForOrgs,
+      }, SetOptions(merge: true));
+
+      return true;
+    } catch (e) {
+      print('Error leaving organization: $e');
+      return false;
+    }
+  }
 }
