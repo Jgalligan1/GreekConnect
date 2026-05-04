@@ -6,6 +6,7 @@ import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/organizations_screen.dart';
+import 'screens/organization_settings_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -74,10 +75,19 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
       return;
     }
 
-    if (value == 'settings') {
+    if (value == 'organization_settings') {
       await Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const gcSettingsScreen()),
+        MaterialPageRoute(
+          builder: (context) => const OrganizationSettingsScreen(),
+        ),
       );
+      return;
+    }
+
+    if (value == 'settings') {
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const gcSettingsScreen()));
     }
   }
 
@@ -131,6 +141,10 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
                               PopupMenuItem<String>(
                                 value: 'organizations',
                                 child: Text('Organizations'),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'organization_settings',
+                                child: Text('Organization Settings'),
                               ),
                               PopupMenuItem<String>(
                                 value: 'settings',

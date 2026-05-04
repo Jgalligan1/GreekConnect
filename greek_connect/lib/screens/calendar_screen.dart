@@ -43,7 +43,8 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
   Future<void> _loadAdminStatus() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final admin = await UserService().getIsAdmin(user.uid);
+    // Check if user is admin anywhere (globally or of any organization)
+    final admin = await UserService().isUserAdminAnywhere(user.uid);
     if (mounted) {
       setState(() => _isAdmin = admin);
     }

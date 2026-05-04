@@ -21,10 +21,20 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // Checks if the user is an admin of a specific organization.
+    // Returns true if user is in the organization's admin list.
+    function isAdminOfOrganization(organizationName) {
+      return isSignedIn() && (
+        organizationName in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminForOrganizations
+      );
+    }
+
     // ── users collection ───────────────────────────────────────────────────────
     match /users/{uid} {
-      // Any signed-in user can read their own profile.
-      allow read: if isOwner(uid);
+      // Any signed-in user can read user profiles (needed for organization member lists and queries).
+      // NOTE: This is temporary for testing. User data exposed: email, displayName, organization, admin status.
+      // TODO: Replace with Cloud Function that validates organization membership before returning members.
+      allow read: if isSignedIn();
 
       // A user can create their own profile on sign-up.
       allow create: if isOwner(uid);
@@ -35,6 +45,7 @@ service cloud.firestore {
       allow update: if isOwner(uid);
 
       // ── Production rules (re-enable when testing is done) ─────────────────
+      // allow read: if isOwner(uid);
       // allow update: if isOwner(uid) &&
       //   (
       //     !('isAdmin' in request.resource.data) ||
@@ -51,14 +62,14 @@ service cloud.firestore {
       // Anyone signed in can read events (needed for RSVP mode).
       allow read: if isSignedIn();
 
-      // Only admins may create events, and the event must carry an organization.
-      allow create: if isAdmin() &&
-        request.resource.data.keys().hasAll(['organization']) &&
+      // Only admins of the event's organization may create events.
+      allow create: if request.resource.data.keys().hasAll(['organization']) &&
         request.resource.data.organization is string &&
-        request.resource.data.organization.size() > 0;
+        request.resource.data.organization.size() > 0 &&
+        isAdminOfOrganization(request.resource.data.organization);
 
-      // Only admins may update or delete events.
-      allow update, delete: if isAdmin();
+      // Only admins of the event's organization may update or delete events.
+      allow update, delete: if isAdminOfOrganization(resource.data.organization);
     }
 
     // ── rsvps collection ───────────────────────────────────────────────────────
@@ -86,14 +97,16 @@ service cloud.firestore {
       // Any signed-in user can read invitation codes (needed to validate when joining).
       allow read: if isSignedIn();
 
-      // Only admins may create invitation codes.
-      allow create: if isAdmin();
+      // Only organization admins may create invitation codes for their organization.
+      allow create: if request.resource.data.keys().hasAll(['organizationName']) &&
+        isAdminOfOrganization(request.resource.data.organizationName);
 
       // Allow updates:
-      // - Admins can update anything (e.g., revoke codes by setting isActive to false)
+      // - Organization admins can update anything for their org
       // - Signed-in users can increment timesUsed when joining with a valid code
       allow update: if isSignedIn() &&
-        (isAdmin() ||
+        ((request.resource.data.keys().hasAll(['organizationName']) &&
+          isAdminOfOrganization(request.resource.data.organizationName)) ||
          (request.resource.data.timesUsed == resource.data.timesUsed + 1 &&
           request.resource.data.code == resource.data.code &&
           request.resource.data.organizationName == resource.data.organizationName &&
@@ -103,8 +116,9 @@ service cloud.firestore {
           request.resource.data.usageLimit == resource.data.usageLimit &&
           request.resource.data.isActive == resource.data.isActive));
 
-      // Only admins may delete invitation codes.
-      allow delete: if isAdmin();
+      // Only organization admins may delete invitation codes for their organization.
+      allow delete: if resource.data.keys().hasAll(['organizationName']) &&
+        isAdminOfOrganization(resource.data.organizationName);
     }
 
   }

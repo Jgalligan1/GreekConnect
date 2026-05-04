@@ -153,26 +153,19 @@ class UserService {
     }
   }
 
-  // Read current admin flag for a user.
-  Future<bool> getIsAdmin(String uid) async {
+  /// Check if user is an admin of any organization.
+  /// Returns true if user is in adminForOrganizations list.
+  Future<bool> isUserAdminAnywhere(String uid) async {
     try {
       final doc = await _firestore.collection(_usersCollection).doc(uid).get();
-      return (doc.data()?['isAdmin'] as bool?) ?? false;
-    } catch (e) {
-      print('Error loading admin flag: $e');
-      return false;
-    }
-  }
+      final data = doc.data();
+      if (data == null) return false;
 
-  // Test helper to toggle admin mode on the user document.
-  Future<bool> setIsAdmin(String uid, bool isAdmin) async {
-    try {
-      await _firestore.collection(_usersCollection).doc(uid).set({
-        'isAdmin': isAdmin,
-      }, SetOptions(merge: true));
-      return true;
+      // Check if user has any organization admin roles
+      final adminOrgs = data['adminForOrganizations'] as List?;
+      return adminOrgs != null && adminOrgs.isNotEmpty;
     } catch (e) {
-      print('Error updating admin flag: $e');
+      print('Error checking admin status: $e');
       return false;
     }
   }
@@ -225,7 +218,16 @@ class UserService {
       final adminForOrgs = List<String>.from(
         currentUserData['adminForOrganizations'] ?? [],
       );
-      if (!adminForOrgs.contains(organizationName)) {
+
+      // Check if user is admin: either explicit org admin or global admin with primary org
+      bool isCurrentUserAdmin = adminForOrgs.contains(organizationName);
+      if (!isCurrentUserAdmin &&
+          (currentUserData['isAdmin'] as bool? ?? false)) {
+        final primaryOrg = currentUserData['organization'] as String?;
+        isCurrentUserAdmin = primaryOrg == organizationName;
+      }
+
+      if (!isCurrentUserAdmin) {
         print('Error: Current user is not an admin of $organizationName');
         return false;
       }
@@ -286,7 +288,16 @@ class UserService {
       final adminForOrgs = List<String>.from(
         currentUserData['adminForOrganizations'] ?? [],
       );
-      if (!adminForOrgs.contains(organizationName)) {
+
+      // Check if user is admin: either explicit org admin or global admin with primary org
+      bool isCurrentUserAdmin = adminForOrgs.contains(organizationName);
+      if (!isCurrentUserAdmin &&
+          (currentUserData['isAdmin'] as bool? ?? false)) {
+        final primaryOrg = currentUserData['organization'] as String?;
+        isCurrentUserAdmin = primaryOrg == organizationName;
+      }
+
+      if (!isCurrentUserAdmin) {
         print('Error: Current user is not an admin of $organizationName');
         return false;
       }
@@ -364,7 +375,16 @@ class UserService {
       final adminForOrgs = List<String>.from(
         currentUserData['adminForOrganizations'] ?? [],
       );
-      if (!adminForOrgs.contains(organizationName)) {
+
+      // Check if user is admin: either explicit org admin or global admin with primary org
+      bool isCurrentUserAdmin = adminForOrgs.contains(organizationName);
+      if (!isCurrentUserAdmin &&
+          (currentUserData['isAdmin'] as bool? ?? false)) {
+        final primaryOrg = currentUserData['organization'] as String?;
+        isCurrentUserAdmin = primaryOrg == organizationName;
+      }
+
+      if (!isCurrentUserAdmin) {
         print('Error: Current user is not an admin of $organizationName');
         return false;
       }
