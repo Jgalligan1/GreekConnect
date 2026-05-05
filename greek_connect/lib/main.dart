@@ -68,6 +68,15 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
   int selectedIndex = 0;
 
   Future<void> _openTopMenuDestination(String value) async {
+    if (value == 'my_events') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const gcMyEventsScreen(),
+        ),
+      );
+      return;
+    }
+
     if (value == 'organization_settings') {
       await Navigator.of(context).push(
         MaterialPageRoute(
