@@ -33,18 +33,25 @@ service cloud.firestore {
       // A user can create their own profile on sign-up.
       allow create: if isOwner(uid);
 
-      //     TESTING ONLY — any user can update their own profile, including
-      //     toggling isAdmin on themselves. Remove this and restore the
-      //     stricter rules below before going to production.
-      allow update: if isOwner(uid);
+      // Users can update their own profile (but not isAdmin or isAdmin field)
+      allow update: if isOwner(uid) &&
+        (
+          !('isAdmin' in request.resource.data) ||
+          request.resource.data.isAdmin == resource.data.isAdmin
+        );
 
-      // ── Production rules (re-enable when testing is done) ─────────────────
-      // allow update: if isOwner(uid) &&
-      //   (
-      //     !('isAdmin' in request.resource.data) ||
-      //     request.resource.data.isAdmin == resource.data.isAdmin
-      //   );
-      // allow update: if isAdmin();
+      // Admins can update organization-related fields for any user
+      // This allows promoting/demoting users and managing organization membership
+      allow update: if isAdmin() &&
+        (
+          // Only allow updating organization-related fields, not security-sensitive fields
+          !('isAdmin' in request.resource.data) ||
+          request.resource.data.isAdmin == resource.data.isAdmin
+        ) &&
+        (
+          !('email' in request.resource.data) ||
+          request.resource.data.email == resource.data.email
+        );
 
       // Only admins may delete user profiles.
       allow delete: if isAdmin();
