@@ -72,6 +72,11 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
     });
   }
 
+  bool _isUserAuthenticated() {
+    return FirebaseAuth.instance.currentUser != null &&
+        FirebaseAuth.instance.currentUser!.uid.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -326,12 +331,27 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: _availableOrganizations.isEmpty
+                        onPressed: _availableOrganizations.isEmpty || !_isUserAuthenticated()
                             ? null
                             : () {
                                 if (_formKey.currentState!.validate()) {
                                   _formKey.currentState!.save();
                                   final existing = widget.initialEvent;
+                                  final currentUser = FirebaseAuth.instance.currentUser;
+                                  
+                                  // Ensure user is authenticated before creating event
+                                  if (currentUser == null || currentUser.uid.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('You must be signed in to create an event'),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  print('DEBUG: Form save - current user uid=${currentUser.uid}');
+                                  print('DEBUG: Form save - current user email=${currentUser.email}');
+
                                   final newEvent = gcEvent(
                                     id: existing?.id ?? UniqueKey().toString(),
                                     title: _title,
@@ -341,9 +361,7 @@ class _gcEventFormModalState extends State<gcEventFormModal> {
                                     startTime: _startTime,
                                     endTime: _endTime,
                                     date: widget.selectedDate,
-                                    userId:
-                                        existing?.userId ??
-                                        FirebaseAuth.instance.currentUser?.uid,
+                                    userId: existing?.userId ?? currentUser.uid,
                                     color: existing?.color,
                                   );
                                   Navigator.pop(context, newEvent);

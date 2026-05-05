@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:greek_connect/auth/auth.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
 import 'screens/calendar_screen.dart';
+import 'screens/my_events_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/organizations_screen.dart';
 import 'screens/profile_screen.dart';
@@ -67,6 +68,13 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
   int selectedIndex = 0;
 
   Future<void> _openTopMenuDestination(String value) async {
+    if (value == 'my_events') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const gcMyEventsScreen()),
+      );
+      return;
+    }
+
     if (value == 'organizations') {
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => const gcOrganizationsScreen()),
@@ -86,8 +94,18 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
+          stream: FirebaseAuth.instance.idTokenChanges(),
           builder: (context, snapshot) {
+            // While auth is initializing, show loading screen
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
+            // After initialization: if no user, show login; otherwise show dashboard
             if (!snapshot.hasData) {
               return const gcAuthPage();
             }
@@ -128,6 +146,10 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
                             icon: const Icon(Icons.menu),
                             onSelected: _openTopMenuDestination,
                             itemBuilder: (context) => const [
+                              PopupMenuItem<String>(
+                                value: 'my_events',
+                                child: Text('My Events'),
+                              ),
                               PopupMenuItem<String>(
                                 value: 'organizations',
                                 child: Text('Organizations'),

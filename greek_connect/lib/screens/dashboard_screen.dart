@@ -343,7 +343,7 @@ class _gcDashboardScreenState extends State<gcDashboardScreen> {
           children: [
             const SizedBox(height: 12),
             Text(
-              'Hello ${FirebaseAuth.instance.currentUser!.displayName!}, Welcome to the Dashboard!',
+              'Hello ${FirebaseAuth.instance.currentUser!.displayName!}, Welcome to the Symposia Dashboard!',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

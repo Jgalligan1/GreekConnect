@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:greek_connect/screens/organizations_screen.dart';
+import 'package:greek_connect/screens/my_events_screen.dart';
 import '../services/user_service.dart';
 
 class gcSettingsScreen extends StatefulWidget {
@@ -95,7 +96,11 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
   }
 
   Future<void> _openTopMenuDestination(String value) async {
-    if (value == 'organizations') {
+    if (value == 'my_events') {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const gcMyEventsScreen()),
+      );
+    } else if (value == 'organizations') {
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const gcOrganizationsScreen()),
       );
@@ -113,6 +118,10 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
             icon: const Icon(Icons.menu, color: Colors.white),
             onSelected: _openTopMenuDestination,
             itemBuilder: (context) => const [
+              PopupMenuItem<String>(
+                value: 'my_events',
+                child: Text('My Events'),
+              ),
               PopupMenuItem<String>(
                 value: 'organizations',
                 child: Text('Organizations'),

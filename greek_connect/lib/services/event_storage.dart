@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
 import 'notification_service.dart';
 
@@ -14,10 +15,10 @@ class gcEventStorage {
   static Future<Map<DateTime, List<gcEvent>>> loadEvents() async {
     final Map<DateTime, List<gcEvent>> events = {};
     try {
-      // Try to load from Firestore first
+      // Try to load from Firestore first - always use server source for fresh data
       final snapshot = await FirebaseFirestore.instance
           .collection('events')
-          .get(const GetOptions(source: Source.serverAndCache));
+          .get(const GetOptions(source: Source.server));
 
       for (final doc in snapshot.docs) {
         try {
@@ -97,10 +98,37 @@ class gcEventStorage {
   static Future<bool> addEvent(DateTime date, gcEvent event) async {
     final normalizedDate = _normalizeDate(date);
     try {
+      // Validate required fields before saving
+      if (event.organization == null || event.organization!.isEmpty) {
+        print('Error: Event missing organization field');
+        return false;
+      }
+      if (event.userId == null || event.userId!.isEmpty) {
+        print('Error: Event missing userId field');
+        return false;
+      }
+
+      // Log auth state for debugging
+      final authUser = FirebaseAuth.instance.currentUser;
+      print('DEBUG: Creating event with userId=${event.userId}');
+      print('DEBUG: Current auth user uid=${authUser?.uid}');
+      print('DEBUG: Auth user email=${authUser?.email}');
+      print('DEBUG: IDs match: ${event.userId == authUser?.uid}');
+      
+      // Log what's being sent to Firestore
+      final eventJson = event.toJson();
+      print('DEBUG: Event JSON keys: ${eventJson.keys.toList()}');
+      print('DEBUG: Event JSON organization: ${eventJson['organization']}');
+      print('DEBUG: Event JSON userId: ${eventJson['userId']}');
+      print('DEBUG: Event JSON: $eventJson');
+
       final docRef = FirebaseFirestore.instance
           .collection('events')
           .doc(event.id);
+      
+      print('DEBUG: About to call docRef.set() with id=${event.id}');
       await docRef.set(event.toJson());
+      print('DEBUG: Successfully saved event to Firestore');
 
       // Update local cache
       final events = await loadEvents();
@@ -109,7 +137,8 @@ class gcEventStorage {
       await saveEvents(events);
       return true;
     } on FirebaseException catch (e) {
-      print('Error adding event to Firestore: $e');
+      print('Error adding event to Firestore: ${e.code} - ${e.message}');
+      print('Event details: organization=${event.organization}, userId=${event.userId}, title=${event.title}');
       if (e.code == 'permission-denied') {
         // Do not persist unauthorized local-only events; they appear to disappear on next sync.
         return false;
@@ -147,7 +176,8 @@ class gcEventStorage {
       await saveEvents(events);
       return true;
     } on FirebaseException catch (e) {
-      print('Error removing event from Firestore: $e');
+      print('Error removing event from Firestore: ${e.code} - ${e.message}');
+      print('Event details: id=${event.id}, userId=${event.userId}, has userId? ${event.userId != null && event.userId!.isNotEmpty}');
       if (e.code == 'permission-denied') {
         // Don't remove locally if backend denied delete.
         return false;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greek_connect/screens/settings_screen.dart';
+import 'package:greek_connect/screens/my_events_screen.dart';
 
 class gcOrganizationsScreen extends StatelessWidget {
   const gcOrganizationsScreen({super.key});
@@ -8,7 +9,11 @@ class gcOrganizationsScreen extends StatelessWidget {
     BuildContext context,
     String value,
   ) async {
-    if (value == 'settings') {
+    if (value == 'my_events') {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const gcMyEventsScreen()),
+      );
+    } else if (value == 'settings') {
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const gcSettingsScreen()),
       );
@@ -37,7 +42,14 @@ class gcOrganizationsScreen extends StatelessWidget {
             icon: const Icon(Icons.menu, color: Colors.white),
             onSelected: (value) => _openTopMenuDestination(context, value),
             itemBuilder: (context) => const [
-              PopupMenuItem<String>(value: 'settings', child: Text('Settings')),
+              PopupMenuItem<String>(
+                value: 'my_events',
+                child: Text('My Events'),
+              ),
+              PopupMenuItem<String>(
+                value: 'settings',
+                child: Text('Settings'),
+              ),
             ],
           ),
         ],

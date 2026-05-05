@@ -148,6 +148,8 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
   // Delete event
   Future<void> _deleteEvent(gcEvent event) async {
     final normalizedDate = _normalizeDate(event.date);
+    final messenger = ScaffoldMessenger.of(context);
+    
     setState(() {
       _events[normalizedDate]?.removeWhere((e) => e.id == event.id);
       if (_events[normalizedDate]?.isEmpty ?? false) {
@@ -159,7 +161,14 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
     }
 
-    await gcEventStorage.removeEvent(normalizedDate, event);
+    final success = await gcEventStorage.removeEvent(normalizedDate, event);
+    if (!success) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Failed to delete event. Please try again.')),
+      );
+      // Reload events to restore the one that failed to delete
+      await _loadEvents();
+    }
   }
 
   // Edit event

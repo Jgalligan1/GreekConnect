@@ -39,4 +39,8 @@
 			]
 		}
 	]
+	,
+	"firestore": {
+		"rules": "firestore.rules"
+	}
 }
