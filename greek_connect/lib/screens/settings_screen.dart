@@ -65,6 +65,23 @@ class _gcSettingsScreenState extends State<gcSettingsScreen> {
     });
   }
 
+  void _openTopMenuDestination(String value) {
+    switch (value) {
+      case 'my_events':
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const gcMyEventsScreen()),
+        );
+        break;
+      case 'organizations':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const gcOrganizationsScreen(),
+          ),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

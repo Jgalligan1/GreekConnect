@@ -26,6 +26,10 @@ service cloud.firestore {
       // Any signed-in user can read their own profile.
       allow read: if isOwner(uid);
 
+      // Allow reading other users' profiles to fetch organization members
+      // (only displayName, email, and organization fields are needed)
+      allow read: if isSignedIn();
+
       // A user can create their own profile on sign-up.
       allow create: if isOwner(uid);
 
