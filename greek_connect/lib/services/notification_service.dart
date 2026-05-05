@@ -129,7 +129,7 @@ class NotificationService {
     await docRef.set(notification.toMap(), SetOptions(merge: true));
   }
 
-  static Future<void> notifyEventCancelledForRsvps({
+  static Future<bool> notifyEventCancelledForRsvps({
     required gcEvent event,
   }) async {
     try {
@@ -138,7 +138,7 @@ class NotificationService {
           .where('eventId', isEqualTo: event.id)
           .get();
 
-      if (rsvpSnapshot.docs.isEmpty) return;
+        if (rsvpSnapshot.docs.isEmpty) return true;
 
       final batch = _db.batch();
       final now = DateTime.now();
@@ -183,8 +183,10 @@ class NotificationService {
       }
 
       await batch.commit();
+      return true;
     } catch (e) {
       debugPrint('Error sending cancellation notifications: $e');
+      return false;
     }
   }
 

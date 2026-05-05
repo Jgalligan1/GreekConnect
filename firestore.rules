@@ -72,7 +72,12 @@ service cloud.firestore {
 
       // A signed-in user can create/update/delete their own RSVP.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        (resource.data.eventId is string &&
+          get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.userId == request.auth.uid)
+      );
     }
 
     // ── in_app_notifications collection ────────────────────────────────────────

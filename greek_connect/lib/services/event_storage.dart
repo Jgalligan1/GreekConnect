@@ -164,9 +164,16 @@ class gcEventStorage {
       final docRef = FirebaseFirestore.instance
           .collection('events')
           .doc(event.id);
-      await docRef.delete();
 
-      await NotificationService.notifyEventCancelledForRsvps(event: event);
+      final cleanupSuccess = await NotificationService.notifyEventCancelledForRsvps(
+        event: event,
+      );
+      if (!cleanupSuccess) {
+        print('Error: RSVP cleanup failed, aborting event delete for ${event.id}');
+        return false;
+      }
+
+      await docRef.delete();
 
       final events = await loadEvents();
       events[normalizedDate]?.removeWhere((e) => e.id == event.id);
