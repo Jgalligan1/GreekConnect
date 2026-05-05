@@ -3,6 +3,7 @@ class UserProfile {
   final String email;
   final String? displayName;
   final String? organization;
+  final List<String> organizations;
   final DateTime createdAt;
   final DateTime? lastLoginAt;
   final bool isAdmin;
@@ -13,6 +14,7 @@ class UserProfile {
     required this.email,
     this.displayName,
     this.organization,
+    this.organizations = const [],
     required this.createdAt,
     this.lastLoginAt,
     this.isAdmin = false,
@@ -26,6 +28,7 @@ class UserProfile {
       'email': email,
       'displayName': displayName,
       'organization': organization,
+      'organizations': organizations,
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'isAdmin': isAdmin,
@@ -40,6 +43,7 @@ class UserProfile {
       email: map['email'] ?? '',
       displayName: map['displayName'],
       organization: map['organization'],
+      organizations: List<String>.from(map['organizations'] ?? []),
       createdAt: DateTime.parse(map['createdAt']),
       lastLoginAt: map['lastLoginAt'] != null
           ? DateTime.parse(map['lastLoginAt'])
@@ -57,6 +61,7 @@ class UserProfile {
     String? email,
     String? displayName,
     String? organization,
+    List<String>? organizations,
     DateTime? createdAt,
     DateTime? lastLoginAt,
     bool? isAdmin,
@@ -67,6 +72,7 @@ class UserProfile {
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       organization: organization ?? this.organization,
+      organizations: organizations ?? this.organizations,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       isAdmin: isAdmin ?? this.isAdmin,
