@@ -1,5 +1,6 @@
 // lib/models/event.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class gcEvent {
@@ -53,15 +54,24 @@ class gcEvent {
 
   // Create Event ← JSON
   factory gcEvent.fromJson(Map<String, dynamic> json) {
+    final rawDate = json['date'];
+    final parsedDate = rawDate is Timestamp
+      ? rawDate.toDate()
+      : rawDate is DateTime
+        ? rawDate
+        : rawDate is String
+          ? DateTime.parse(rawDate)
+          : DateTime.now();
+
     return gcEvent(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      date: DateTime.parse(json['date'] as String),
+      id: json['id']?.toString(),
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString(),
+      date: parsedDate,
       color: json['color'] as int? ?? 0xFF2196F3,
-      location: json['location'] as String?,
-      userId: json['userId'] as String?,
-      organization: json['organization'] as String?,
+      location: json['location']?.toString(),
+      userId: json['userId']?.toString(),
+      organization: json['organization']?.toString(),
       startTime: json['startTime'] != null
           ? _parseTimeOfDay(json['startTime'])
           : null,

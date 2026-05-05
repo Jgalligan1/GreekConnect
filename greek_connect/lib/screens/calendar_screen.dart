@@ -86,6 +86,7 @@ class _gcCalendarScreenState extends State<gcCalendarScreen> {
       final loadedEvents = await gcEventStorage.loadEvents();
       setState(() {
         _events = loadedEvents;
+        _selectedDay ??= _focusedDay;
         _selectedEvents.value = _getEventsForDay(_selectedDay!);
         _isLoading = false;
       });

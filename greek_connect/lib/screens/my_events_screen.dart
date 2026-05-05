@@ -66,7 +66,7 @@ class _gcMyEventsScreenState extends State<gcMyEventsScreen> {
         try {
           final data = doc.data();
           // Ensure id is present
-          data['id'] = data['id'] ?? doc.id;
+          data['id'] = data['id']?.toString() ?? doc.id;
           final event = gcEvent.fromJson(Map<String, dynamic>.from(data));
           events.add(event);
         } catch (e) {
@@ -93,6 +93,10 @@ class _gcMyEventsScreenState extends State<gcMyEventsScreen> {
   }
 
   Future<int> _getRsvpCount(String eventId) async {
+    if (eventId.isEmpty) {
+      return 0;
+    }
+
     if (_rsvpCounts.containsKey(eventId)) {
       return _rsvpCounts[eventId]!;
     }
