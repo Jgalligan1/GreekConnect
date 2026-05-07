@@ -33,7 +33,11 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
     );
 
     try {
-      if (!await launchUrl(authUri, mode: LaunchMode.externalApplication)) {
+      if (!await launchUrl(
+        authUri,
+        mode: LaunchMode.platformDefault,
+        webOnlyWindowName: '_self',
+      )) {
         displayMessage('Could not open browser for Okta sign-in.');
       }
     } catch (e) {
