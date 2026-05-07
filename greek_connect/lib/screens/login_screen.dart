@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greek_connect/services/okta_auth_service.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'dart:html' as html;
 import 'faq_screen.dart';
 
 class gcLoginScreen extends StatefulWidget {
@@ -11,10 +11,10 @@ class gcLoginScreen extends StatefulWidget {
 }
 
 class _gcLoginScreenState extends State<gcLoginScreen> {
-  Future<void> _launchOktaSignIn() async {
+  void _launchOktaSignIn() {
     // Generate PKCE parameters
     final pkce = OktaAuthService.generatePKCE();
-    await OktaAuthService.storeCodeVerifier(pkce['code_verifier']!);
+    OktaAuthService.storeCodeVerifier(pkce['code_verifier']!);
 
     final Uri authUri = Uri(
       scheme: 'https',
@@ -33,11 +33,14 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
     );
 
     try {
-      if (!await launchUrl(authUri, mode: LaunchMode.externalApplication)) {
-        displayMessage('Could not open browser for Okta sign-in.');
-      }
+      print('Navigating to Okta sign-in URL: $authUri');
+      // Navigate the current window to Okta
+      // Okta will redirect back to http://localhost:8080/ with the authorization code
+      // When it redirects, the app will reload and the OAuth callback handler will capture the code
+      html.window.location.href = authUri.toString();
     } catch (e) {
       displayMessage('Failed to open sign-in: $e');
+      print('Error launching Okta sign-in: $e');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
 
@@ -10,19 +11,61 @@ import '../models/user_profile.dart';
 
 class OAuthCallbackService {
   static bool _hasProcessedCallback = false;
+  static String? _lastCheckedUrl;
+  static Timer? _urlCheckTimer;
 
   /// Checks the current URL for an OAuth authorization code, exchanges it for
-  /// tokens, and signs the user in to Firebase. Handles both initial load and
-  /// URL changes.
+  /// tokens, and signs the user in to Firebase. Called on app startup.
   static Future<void> handleOAuthCallback() async {
     print('=== handleOAuthCallback called ===');
+    print('Current URL at startup: ${html.window.location.href}');
+
     // Try to process the callback immediately
     await _processCallback();
 
-    // Also listen for URL changes (in case the code appears later)
-    html.window.onPopState.listen((event) {
-      print('URL changed, checking for OAuth code...');
-      _processCallback();
+    // Start monitoring for URL changes (Okta redirects happen in the same tab)
+    _startUrlMonitoring();
+  }
+
+  /// Start monitoring for URL changes since popstate doesn't catch all redirects
+  static void _startUrlMonitoring() {
+    print('Starting URL monitoring for OAuth callback...');
+    _lastCheckedUrl = html.window.location.href;
+    print('Initial URL stored: $_lastCheckedUrl');
+
+    // Check every 500ms for URL changes
+    _urlCheckTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      final currentUrl = html.window.location.href;
+
+      // Log every 6 checks (3 seconds) to avoid spam
+      if (timer.tick % 6 == 0) {
+        print(
+          '[URL Monitor] Check ${timer.tick}: Current URL ends with ${currentUrl.split('/').last}',
+        );
+      }
+
+      if (currentUrl != _lastCheckedUrl) {
+        print('URL changed detected!');
+        print('  Old: $_lastCheckedUrl');
+        print('  New: $currentUrl');
+        _lastCheckedUrl = currentUrl;
+
+        // Only process if we haven't already and if the URL has query params
+        if (!_hasProcessedCallback && currentUrl.contains('?')) {
+          print('URL has query parameters, processing callback...');
+          // Call async function without waiting (let it run in background)
+          _processCallback()
+              .then((_) {
+                print('Callback processing completed');
+              })
+              .catchError((e) {
+                print('Error processing callback: $e');
+              });
+
+          // Cancel the timer after successful detection
+          timer.cancel();
+        }
+      }
     });
   }
 
@@ -38,18 +81,31 @@ class OAuthCallbackService {
       final currentUrl = html.window.location.href;
       final currentPathname = html.window.location.pathname ?? '';
       final currentSearch = html.window.location.search ?? '';
+      final currentHash = html.window.location.hash ?? '';
 
       print('=== OAuth Callback Debug Info ===');
       print('Full URL: $currentUrl');
       print('Pathname: $currentPathname');
       print('Search: $currentSearch');
+      print('Hash: $currentHash');
 
-      // Parse the URL to get query parameters
+      // Parse the URL to get query parameters (both query string and hash)
       final uri = Uri.parse(currentUrl);
-      final code = uri.queryParameters['code'];
-      final state = uri.queryParameters['state'];
-      final error = uri.queryParameters['error'];
-      final errorDescription = uri.queryParameters['error_description'];
+      var code = uri.queryParameters['code'];
+      var state = uri.queryParameters['state'];
+      var error = uri.queryParameters['error'];
+      var errorDescription = uri.queryParameters['error_description'];
+
+      // Also check hash parameters in case OAuth uses fragment response mode
+      if (code == null && currentHash.isNotEmpty) {
+        final hashUri = Uri.parse('http://localhost${currentHash}');
+        code = hashUri.queryParameters['code'] ?? code;
+        state = hashUri.queryParameters['state'] ?? state;
+        error = hashUri.queryParameters['error'] ?? error;
+        errorDescription =
+            hashUri.queryParameters['error_description'] ?? errorDescription;
+        print('Parsed hash parameters for code: ${code != null}');
+      }
 
       print('Parsed query parameters:');
       print('  code: ${code != null ? '***present***' : 'null'}');
