@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greek_connect/services/okta_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:greek_connect/services/web_navigation.dart';
 import 'faq_screen.dart';
 
 class gcLoginScreen extends StatefulWidget {
@@ -33,12 +34,15 @@ class _gcLoginScreenState extends State<gcLoginScreen> {
     );
 
     try {
-      if (!await launchUrl(
-        authUri,
-        mode: LaunchMode.platformDefault,
-        webOnlyWindowName: '_self',
-      )) {
-        displayMessage('Could not open browser for Okta sign-in.');
+      final navigated = await navigateToUrl(authUri.toString());
+      if (!navigated) {
+        if (!await launchUrl(
+          authUri,
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_self',
+        )) {
+          displayMessage('Could not open browser for Okta sign-in.');
+        }
       }
     } catch (e) {
       displayMessage('Failed to open sign-in: $e');
