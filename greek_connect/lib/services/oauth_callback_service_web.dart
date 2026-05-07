@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'okta_auth_service.dart';
+import 'user_service.dart';
 
 class OAuthCallbackService {
   /// Checks the current URL for an OAuth authorization code, exchanges it for
@@ -37,6 +38,7 @@ class OAuthCallbackService {
       }
 
       await _signInOrCreateFirebaseUser(email: email, displayName: name);
+      await _ensureFirestoreProfile(email: email, displayName: name);
 
       // Remove the OAuth query params from the browser URL bar.
       html.window.history.replaceState(null, '', '/');
@@ -61,7 +63,9 @@ class OAuthCallbackService {
       );
       print('Signed in existing Firebase user: $email');
     } on FirebaseAuthException catch (signInError) {
-      print('Sign-in failed (${signInError.code}), attempting account creation');
+      print(
+        'Sign-in failed (${signInError.code}), attempting account creation',
+      );
       try {
         final credential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(email: email, password: password);
@@ -75,6 +79,31 @@ class OAuthCallbackService {
           'Failed to create Firebase account: ${createError.code} - ${createError.message}',
         );
       }
+    }
+  }
+
+  static Future<void> _ensureFirestoreProfile({
+    required String email,
+    String? displayName,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('Skipping profile creation: no Firebase user available');
+      return;
+    }
+
+    try {
+      await user.getIdToken(true);
+      final success = await UserService().ensureUserProfile(
+        uid: user.uid,
+        email: email,
+        displayName: displayName,
+      );
+      if (!success) {
+        print('Failed to ensure Firestore profile for ${user.uid}');
+      }
+    } catch (e) {
+      print('Error ensuring Firestore profile: $e');
     }
   }
 
