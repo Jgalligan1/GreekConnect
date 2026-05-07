@@ -46,6 +46,11 @@ class OktaAuthService {
   static Future<Map<String, dynamic>?> exchangeCodeForTokens(
     String code,
   ) async {
+    if (code.isEmpty) {
+      print('Error: Empty authorization code');
+      return null;
+    }
+
     final codeVerifier = await getCodeVerifier();
     if (codeVerifier == null) {
       print('Error: No code_verifier found');
@@ -55,16 +60,28 @@ class OktaAuthService {
     final tokenUrl = Uri.https(oktaDomain, '/oauth2/default/v1/token');
 
     try {
+      final bodyParams = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': redirectUri,
+        'client_id': clientId,
+        'code_verifier': codeVerifier,
+      };
+
+      final encodedBody = bodyParams.entries
+          .map(
+            (e) =>
+                '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+          )
+          .join('&');
+
       final response = await http.post(
         tokenUrl,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          'grant_type': 'authorization_code',
-          'code': code,
-          'redirect_uri': redirectUri,
-          'client_id': clientId,
-          'code_verifier': codeVerifier,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
         },
+        body: encodedBody,
       );
 
       if (response.statusCode == 200) {

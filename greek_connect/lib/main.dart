@@ -1,8 +1,11 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:greek_connect/auth/auth.dart';
+import 'package:greek_connect/models/user_profile.dart';
 import 'package:greek_connect/screens/dashboard_screen.dart';
+import 'package:greek_connect/services/user_service.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/my_events_screen.dart';
 import 'screens/notifications_screen.dart';
@@ -66,14 +69,14 @@ class gcMyHomePage extends StatefulWidget {
 
 class _gcMyHomePageState extends State<gcMyHomePage> {
   int selectedIndex = 0;
+  String? _lastLoginUpdatedUid;
+  String? _creatingProfileUid;
 
   Future<void> _openTopMenuDestination(String value) async {
     if (value == 'my_events') {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const gcMyEventsScreen(),
-        ),
-      );
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const gcMyEventsScreen()));
       return;
     }
 
@@ -93,6 +96,31 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
     }
   }
 
+  Future<void> _ensureProfile(User user) async {
+    if (_creatingProfileUid == user.uid) {
+      return;
+    }
+    _creatingProfileUid = user.uid;
+
+    try {
+      final profile = UserProfile(
+        uid: user.uid,
+        email: user.email ?? '',
+        displayName: user.displayName,
+        organization: null,
+        organizations: const [],
+        createdAt: DateTime.now(),
+        lastLoginAt: DateTime.now(),
+      );
+
+      await UserService().createUserProfile(profile);
+    } finally {
+      if (mounted && _creatingProfileUid == user.uid) {
+        _creatingProfileUid = null;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -103,9 +131,7 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
             // While auth is initializing, show loading screen
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                body: Center(child: CircularProgressIndicator()),
               );
             }
 
@@ -114,102 +140,146 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
               return const gcAuthPage();
             }
 
-            Widget page;
-            switch (selectedIndex) {
-              case 0:
-                page = gcDashboardScreen();
-                break;
-              case 1:
-                page = gcCalendarScreen();
-                break;
-              case 2:
-                page = gcNotificationsScreen();
-                break;
-              case 3:
-                page = const ProfileScreen();
-                break;
-              default:
-                page = gcDashboardScreen();
-            }
+            final user = snapshot.data!;
 
-            return Scaffold(
-              body: Stack(
-                children: [
-                  Positioned.fill(child: page),
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8.0, top: 4.0),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: Material(
-                          color: Colors.white,
-                          elevation: 3,
-                          borderRadius: BorderRadius.circular(10),
-                          child: PopupMenuButton<String>(
-                            tooltip: 'Menu',
-                            icon: const Icon(Icons.menu),
-                            onSelected: _openTopMenuDestination,
-                            itemBuilder: (context) => const [
-                              PopupMenuItem<String>(
-                                value: 'my_events',
-                                child: Text('My Events'),
+            return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .snapshots(),
+              builder: (context, profileSnapshot) {
+                if (profileSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (profileSnapshot.hasError) {
+                  return const Scaffold(
+                    body: Center(
+                      child: Text('Error loading profile. Please try again.'),
+                    ),
+                  );
+                }
+
+                final profileExists = profileSnapshot.data?.exists ?? false;
+                if (!profileExists) {
+                  if (_creatingProfileUid != user.uid) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _ensureProfile(user);
+                    });
+                  }
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (_lastLoginUpdatedUid != user.uid) {
+                  UserService().updateLastLogin(user.uid);
+                  _lastLoginUpdatedUid = user.uid;
+                }
+
+                Widget page;
+                switch (selectedIndex) {
+                  case 0:
+                    page = gcDashboardScreen();
+                    break;
+                  case 1:
+                    page = gcCalendarScreen();
+                    break;
+                  case 2:
+                    page = gcNotificationsScreen();
+                    break;
+                  case 3:
+                    page = const ProfileScreen();
+                    break;
+                  default:
+                    page = gcDashboardScreen();
+                }
+
+                return Scaffold(
+                  body: Stack(
+                    children: [
+                      Positioned.fill(child: page),
+                      SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Material(
+                              color: Colors.white,
+                              elevation: 3,
+                              borderRadius: BorderRadius.circular(10),
+                              child: PopupMenuButton<String>(
+                                tooltip: 'Menu',
+                                icon: const Icon(Icons.menu),
+                                onSelected: _openTopMenuDestination,
+                                itemBuilder: (context) => const [
+                                  PopupMenuItem<String>(
+                                    value: 'my_events',
+                                    child: Text('My Events'),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'organization_settings',
+                                    child: Text('Organization Settings'),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'settings',
+                                    child: Text('Settings'),
+                                  ),
+                                ],
                               ),
-                              PopupMenuItem<String>(
-                                value: 'organization_settings',
-                                child: Text('Organization Settings'),
-                              ),
-                              PopupMenuItem<String>(
-                                value: 'settings',
-                                child: Text('Settings'),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  bottomNavigationBar: BottomNavigationBar(
+                    type: BottomNavigationBarType.fixed,
+                    backgroundColor:
+                        Theme.of(context).appBarTheme.backgroundColor ??
+                        const Color(0xFF801C0D),
+                    selectedItemColor:
+                        Theme.of(context).appBarTheme.foregroundColor ??
+                        Colors.white,
+                    unselectedItemColor: Colors.white70,
+                    selectedIconTheme: IconThemeData(
+                      color:
+                          Theme.of(context).appBarTheme.foregroundColor ??
+                          Colors.white,
                     ),
+                    unselectedIconTheme: const IconThemeData(
+                      color: Colors.white70,
+                    ),
+                    currentIndex: selectedIndex,
+                    onTap: (index) {
+                      setState(() {
+                        selectedIndex = index;
+                      });
+                    },
+                    items: const [
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.dashboard),
+                        label: 'Dashboard',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.calendar_today),
+                        label: 'Calendar',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.notifications),
+                        label: 'Notifications',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.settings),
+                        label: 'Profile',
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              bottomNavigationBar: BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                backgroundColor:
-                    Theme.of(context).appBarTheme.backgroundColor ??
-                    const Color(0xFF801C0D),
-                selectedItemColor:
-                    Theme.of(context).appBarTheme.foregroundColor ??
-                    Colors.white,
-                unselectedItemColor: Colors.white70,
-                selectedIconTheme: IconThemeData(
-                  color:
-                      Theme.of(context).appBarTheme.foregroundColor ??
-                      Colors.white,
-                ),
-                unselectedIconTheme: const IconThemeData(color: Colors.white70),
-                currentIndex: selectedIndex,
-                onTap: (index) {
-                  setState(() {
-                    selectedIndex = index;
-                  });
-                },
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.dashboard),
-                    label: 'Dashboard',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.calendar_today),
-                    label: 'Calendar',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.notifications),
-                    label: 'Notifications',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.settings),
-                    label: 'Profile',
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
