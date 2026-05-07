@@ -103,17 +103,11 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
     _creatingProfileUid = user.uid;
 
     try {
-      final profile = UserProfile(
+      await UserService().ensureUserProfile(
         uid: user.uid,
-        email: user.email ?? '',
+        email: user.email,
         displayName: user.displayName,
-        organization: null,
-        organizations: const [],
-        createdAt: DateTime.now(),
-        lastLoginAt: DateTime.now(),
       );
-
-      await UserService().createUserProfile(profile);
     } finally {
       if (mounted && _creatingProfileUid == user.uid) {
         _creatingProfileUid = null;

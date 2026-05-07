@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:greek_connect/models/user_profile.dart';
 
 class UserService {
@@ -40,6 +41,48 @@ class UserService {
       return true;
     } catch (e) {
       print('Error creating user profile: $e');
+      return false;
+    }
+  }
+
+  Map<String, bool> _defaultNotificationPreferences() {
+    return {
+      'newEvents': true,
+      'myUpcomingEvents': true,
+      'houseUpdates': false,
+      'urgentUpdates': true,
+      'outlook': true,
+      'textMessages': false,
+    };
+  }
+
+  Future<bool> ensureUserProfile({
+    required String uid,
+    String? email,
+    String? displayName,
+  }) async {
+    try {
+      final docRef = _firestore.collection(_usersCollection).doc(uid);
+      final doc = await docRef.get();
+      if (doc.exists) return true;
+
+      final now = DateTime.now().toIso8601String();
+      await docRef.set({
+        'uid': uid,
+        'email': email ?? '',
+        'displayName': displayName,
+        'organization': null,
+        'organizations': <String>[],
+        'createdAt': now,
+        'lastLoginAt': now,
+        'isAdmin': false,
+        'adminForOrganizations': <String>[],
+        'notificationPreferences': _defaultNotificationPreferences(),
+      });
+
+      return true;
+    } catch (e) {
+      print('Error ensuring user profile: $e');
       return false;
     }
   }
@@ -145,6 +188,12 @@ class UserService {
     Map<String, bool> prefs,
   ) async {
     try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      await ensureUserProfile(
+        uid: uid,
+        email: currentUser?.email,
+        displayName: currentUser?.displayName,
+      );
       await _firestore.collection(_usersCollection).doc(uid).set({
         'notificationPreferences': prefs,
       }, SetOptions(merge: true));
