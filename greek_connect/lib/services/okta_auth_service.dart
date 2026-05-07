@@ -7,8 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class OktaAuthService {
   static const String oktaDomain = 'siot.okta.com';
   static const String clientId = '0oa10txmvbz70TDyh698';
-  //static const String redirectUri = 'http://localhost:8080/login/callback';
-  static const String redirectUri = 'https://symposia.web.app/login/callback';
+  //static const String redirectUri = 'http://localhost:8080/';
+  static const String redirectUri = 'https://symposia.web.app/';
 
   // Generate PKCE code_verifier and code_challenge
   static Map<String, String> generatePKCE() {
