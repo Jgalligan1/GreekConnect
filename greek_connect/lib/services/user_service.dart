@@ -64,21 +64,63 @@ class UserService {
     try {
       final docRef = _firestore.collection(_usersCollection).doc(uid);
       final doc = await docRef.get();
-      if (doc.exists) return true;
-
       final now = DateTime.now().toIso8601String();
-      await docRef.set({
-        'uid': uid,
-        'email': email ?? '',
-        'displayName': displayName,
-        'organization': null,
-        'organizations': <String>[],
-        'createdAt': now,
-        'lastLoginAt': now,
-        'isAdmin': false,
-        'adminForOrganizations': <String>[],
-        'notificationPreferences': _defaultNotificationPreferences(),
-      });
+
+      if (!doc.exists) {
+        await docRef.set({
+          'uid': uid,
+          'email': email ?? '',
+          'displayName': displayName,
+          'organization': null,
+          'organizations': <String>[],
+          'createdAt': now,
+          'lastLoginAt': now,
+          'isAdmin': false,
+          'adminForOrganizations': <String>[],
+          'notificationPreferences': _defaultNotificationPreferences(),
+        });
+        return true;
+      }
+
+      final data = doc.data();
+      if (data == null) {
+        await docRef.set({
+          'uid': uid,
+          'email': email ?? '',
+          'displayName': displayName,
+          'organization': null,
+          'organizations': <String>[],
+          'createdAt': now,
+          'lastLoginAt': now,
+          'isAdmin': false,
+          'adminForOrganizations': <String>[],
+          'notificationPreferences': _defaultNotificationPreferences(),
+        }, SetOptions(merge: true));
+        return true;
+      }
+
+      final updates = <String, dynamic>{};
+
+      if (!data.containsKey('uid')) updates['uid'] = uid;
+      if (!data.containsKey('email')) updates['email'] = email ?? '';
+      if (!data.containsKey('displayName'))
+        updates['displayName'] = displayName;
+      if (!data.containsKey('organization')) updates['organization'] = null;
+      if (!data.containsKey('organizations'))
+        updates['organizations'] = <String>[];
+      if (!data.containsKey('createdAt')) updates['createdAt'] = now;
+      if (!data.containsKey('lastLoginAt')) updates['lastLoginAt'] = now;
+      if (!data.containsKey('isAdmin')) updates['isAdmin'] = false;
+      if (!data.containsKey('adminForOrganizations')) {
+        updates['adminForOrganizations'] = <String>[];
+      }
+      if (!data.containsKey('notificationPreferences')) {
+        updates['notificationPreferences'] = _defaultNotificationPreferences();
+      }
+
+      if (updates.isNotEmpty) {
+        await docRef.set(updates, SetOptions(merge: true));
+      }
 
       return true;
     } catch (e) {
