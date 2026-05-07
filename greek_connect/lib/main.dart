@@ -72,6 +72,17 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
   String? _lastLoginUpdatedUid;
   String? _creatingProfileUid;
 
+  bool _needsProfileBackfill(Map<String, dynamic>? data) {
+    if (data == null) return true;
+    if (!data.containsKey('uid')) return true;
+    if (!data.containsKey('email')) return true;
+    if (!data.containsKey('createdAt')) return true;
+    if (!data.containsKey('organizations')) return true;
+    if (!data.containsKey('adminForOrganizations')) return true;
+    if (!data.containsKey('notificationPreferences')) return true;
+    return false;
+  }
+
   Future<void> _openTopMenuDestination(String value) async {
     if (value == 'my_events') {
       await Navigator.of(
@@ -158,7 +169,8 @@ class _gcMyHomePageState extends State<gcMyHomePage> {
                 }
 
                 final profileExists = profileSnapshot.data?.exists ?? false;
-                if (!profileExists) {
+                final profileData = profileSnapshot.data?.data();
+                if (!profileExists || _needsProfileBackfill(profileData)) {
                   if (_creatingProfileUid != user.uid) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       _ensureProfile(user);
